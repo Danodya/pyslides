@@ -14,6 +14,9 @@ run = True
 # game loop
 while run:
 
+    # refresh screen to avoid trail of the history
+    screen.fill((0, 0, 0))
+
     # draw the square
     pygame.draw.rect(screen, (255, 0, 0), player)
 
