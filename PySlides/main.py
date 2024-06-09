@@ -1,4 +1,5 @@
 import pygame
+import constant
 
 pygame.init()
 
@@ -6,6 +7,17 @@ pygame.init()
 SCREEN_WIDTH = 794
 SCREEN_HIGHT = 1123
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HIGHT))
+
+pygame.display.set_caption(constant.DISPLAY_CAPTION)
+
+
+# Function to toggle full screen
+def toggle_fullscreen():
+    global screen
+    if screen.get_flags() & pygame.FULLSCREEN:
+        pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HIGHT))
+    else:
+        pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HIGHT), pygame.FULLSCREEN)
 
 # create a square
 player = pygame.Rect((300, 250, 50, 50))
@@ -36,8 +48,11 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_f:  # Press 'f' to toggle full screen
+                toggle_fullscreen()
 
-    # update window to display the square
-    pygame.display.update()
+    # update the window
+    pygame.display.flip()
 
 pygame.quit()
