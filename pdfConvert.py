@@ -21,19 +21,24 @@ def toggle_fullscreen():
         window_size = screen.get_size()  # Update window_size to full screen size
 
 # Function to convert pdf to images
-def convert_pdf_to_images(pdf_path, output_folder):
+def convert_pdf_to_images(pdf_path, output_folder, window_size):
     # Open the PDF file
     pdf_document = fitz.open(pdf_path)
     images = []
 
-    # Specify a scaling factor for higher resolution
-    zoom_x = 2.0  # Horizontal zoom
-    zoom_y = 2.0  # Vertical zoom
-    matrix = fitz.Matrix(zoom_x, zoom_y)
+    # Get the screen width and height
+    screen_width, screen_height = window_size
+
+    # Higher resolution scaling factor
+    high_res_factor = 2.0
 
     # Iterate through each page
     for page_num in range(len(pdf_document)):
         page = pdf_document.load_page(page_num)
+        # Calculate a uniform scaling factor to maintain aspect ratio
+        rect = page.rect
+        zoom_factor = min(screen_width / rect.width, screen_height / rect.height) * high_res_factor
+        matrix = fitz.Matrix(zoom_factor, zoom_factor)
         # Render the page to a high-resolution pixmap
         pix = page.get_pixmap(matrix=matrix)
         image_path = os.path.join(output_folder, f"page_{page_num}.png")
@@ -101,7 +106,8 @@ output_folder = f'pdf_images/{file_name}'
 os.makedirs(output_folder, exist_ok=True)
 
 # Convert PDF to images
-image_paths = convert_pdf_to_images(pdf_path, output_folder)
+image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
 
 # Display images using Pygame
 display_images_with_pygame(image_paths, window_size)
+
