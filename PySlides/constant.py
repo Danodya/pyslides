@@ -1,0 +1,1 @@
+DISPLAY_CAPTION = 'PySlides'
