@@ -8,6 +8,7 @@ pygame.init()
 # Define the initial window size
 window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
 screen = pygame.display.set_mode(window_size)
+# Set caption of the window
 pygame.display.set_caption(constant.DISPLAY_CAPTION)
 
 is_fullscreen = False
@@ -40,12 +41,16 @@ def convert_pdf_to_images(pdf_path, output_folder, window_size):
     # Iterate through each page
     for page_num in range(len(pdf_document)):
         page = pdf_document.load_page(page_num)
-        # Calculate a uniform scaling factor to maintain aspect ratio
-        rect = page.rect
-        zoom_factor = min(screen_width / rect.width, screen_height / rect.height) * high_res_factor
-        matrix = fitz.Matrix(zoom_factor, zoom_factor)
-        # Render the page to a high-resolution pixmap
+        rect = page.rect # get the dimensions of the page
+
+        # multiply the minimum of the width and height scaling factors by high resolution factor 
+        # to calculate a uniform scaling factor to maintain aspect ratio
+        zoom_factor = min(screen_width / rect.width, screen_height / rect.height) * high_res_factor 
+        matrix = fitz.Matrix(zoom_factor, zoom_factor) # transformation matrix
+
+        # Render the page to a high-resolution pixmap (creates a bitmap image of the page at the specified resolution)
         pix = page.get_pixmap(matrix=matrix)
+        
         image_path = os.path.join(output_folder, f"page_{page_num}.png")
         pix.save(image_path)
         images.append(image_path)
