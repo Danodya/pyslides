@@ -89,23 +89,54 @@ def display_overview(images, window_size):
         y = margin + row * (thumb_height + margin)
         screen.blit(thumbnail, (x, y))
 
+# Function for top-to-bottom transition
+def top_to_bottom_transition(prev_image, next_image, window_size):
+    start_pos = -window_size[1]  # Start above the screen
+    end_pos = (window_size[1] - next_image.get_height()) // 2  # End in the center of the screen
+    step = 20  # Pixels to move each frame
+
+    y_pos_prev = (window_size[1] - prev_image.get_height()) // 2  # Start at the center for the previous image
+    y_pos_next = start_pos  # Start above the screen for the next image
+
+    while y_pos_next < end_pos:
+        screen.fill((0, 0, 0))
+        if y_pos_prev > start_pos:
+            screen.blit(prev_image, ((window_size[0] - prev_image.get_width()) // 2, y_pos_prev))
+        screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, y_pos_next))
+        pygame.display.flip()
+        y_pos_prev -= step
+        y_pos_next += step
+        pygame.time.delay(10)  # Add a small delay to control the speed of the transition
+
 # Function to display converted images
-def display_images_with_pygame(image_paths, window_size):
+def display_images_with_pygame(image_paths, window_size, transition_type):
     global show_overview
     images = [pygame.image.load(img) for img in image_paths]
     scaled_images = [scale_image_to_fit(img, window_size) for img in images]
     current_page = 0
 
+    # Display the first slide without a transition
+    screen.fill((0, 0, 0))
+    image = scaled_images[current_page]
+    image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
+    screen.blit(image, image_rect.topleft)
+    pygame.display.flip()
+
     running = True
     while running:
+        # event handler
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT and not show_overview:
+                    prev_page = current_page
                     current_page = (current_page + 1) % len(scaled_images)
+                    top_to_bottom_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
                 elif event.key == pygame.K_LEFT and not show_overview:
+                    prev_page = current_page
                     current_page = (current_page - 1) % len(scaled_images)
+                    top_to_bottom_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
                 elif event.key == pygame.K_f:  # Press 'f' to toggle full screen
                     toggle_fullscreen()
                     # Rescale images to new window size
@@ -115,7 +146,9 @@ def display_images_with_pygame(image_paths, window_size):
                     show_overview = not show_overview
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and not show_overview:  # Left mouse button to go to the next image
+                    prev_page = current_page
                     current_page = (current_page + 1) % len(scaled_images)
+                    top_to_bottom_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
 
         screen.fill((0, 0, 0))
 
@@ -142,5 +175,7 @@ os.makedirs(output_folder, exist_ok=True)
 # Convert PDF to images
 image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
 
-# Display images using Pygame
-display_images_with_pygame(image_paths, window_size)
+# Display images using Pygame with specified transition type
+# transition_type = 'fade_out_slide_in'  # or 'top_to_bottom'
+transition_type = 'top_to_bottom'  # or 'top_to_bottom'
+display_images_with_pygame(image_paths, window_size, transition_type)
