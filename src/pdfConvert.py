@@ -106,7 +106,7 @@ def top_to_bottom_transition(prev_image, next_image, window_size):
         pygame.display.flip()
         y_pos_prev -= step
         y_pos_next += step
-        pygame.time.delay(10)  # Add a small delay to control the speed of the transition
+        pygame.time.delay(20)  # Add a small delay to control the speed of the transition
 
 # Function for fade out and slide in transition
 def fade_out_slide_in_transition(prev_image, next_image, window_size):
