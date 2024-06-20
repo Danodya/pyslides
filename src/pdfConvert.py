@@ -129,8 +129,8 @@ def fade_out_slide_in_transition(prev_image, next_image, window_size):
         alpha -= alpha_step
         pygame.time.delay(10)  # Add a small delay to control the speed of the transition
 
-# Function for right-to-left transition
-def left_to_right_transition(prev_image, next_image, window_size):
+# Function for left-to-right or swipe right transition
+def swipe_right_transition(prev_image, next_image, window_size):
     start_pos = -window_size[0]  # Start to the left of the screen
     end_pos = (window_size[0] - next_image.get_width()) // 2  # End in the center of the screen
     step = 20  # Pixels to move each frame
@@ -175,8 +175,8 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                         pull_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
                     elif transition_type == 'fade_out_slide_in':
                         fade_out_slide_in_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
-                    elif transition_type == 'left_to_right':
-                        left_to_right_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
+                    elif transition_type == 'swipe_right':
+                        swipe_right_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
                 elif event.key == pygame.K_LEFT and not show_overview:
                     prev_page = current_page
                     current_page = (current_page - 1) % len(scaled_images)
@@ -184,8 +184,8 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                         pull_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
                     elif transition_type == 'fade_out_slide_in':
                         fade_out_slide_in_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
-                    elif transition_type == 'left_to_right':
-                        left_to_right_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
+                    elif transition_type == 'swipe_right':
+                        swipe_right_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
                 elif event.key == pygame.K_f:  # Press 'f' to toggle full screen
                     toggle_fullscreen()
                     # Rescale images to new window size
@@ -201,8 +201,8 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                         pull_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
                     elif transition_type == 'fade_out_slide_in':
                         fade_out_slide_in_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
-                    elif transition_type == 'left_to_right':
-                        left_to_right_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
+                    elif transition_type == 'swipe_right':
+                        swipe_right_transition(scaled_images[prev_page], scaled_images[current_page], window_size)
 
         screen.fill((0, 0, 0))
 
@@ -230,5 +230,5 @@ os.makedirs(output_folder, exist_ok=True)
 image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
 
 # Display images using Pygame with specified transition type
-transition_type = 'left_to_right'  # Options: 'pull', 'fade_out_slide_in', 'left_to_right'
+transition_type = 'swipe_right'  # Options: 'pull', 'fade_out_slide_in', 'swipe_right'
 display_images_with_pygame(image_paths, window_size, transition_type)
