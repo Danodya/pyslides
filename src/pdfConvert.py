@@ -181,7 +181,7 @@ def fade_in_transition(prev_image, next_image, window_size):
         pygame.display.flip()
         alpha += alpha_step
         next_image.set_alpha(alpha)
-        pygame.time.delay(10)  # Add a small delay to control the speed of the transition
+        pygame.time.delay(25)  # Add a small delay to control the speed of the transition
 
 # Function to display converted images
 def display_images_with_pygame(image_paths, window_size, transition_type):
