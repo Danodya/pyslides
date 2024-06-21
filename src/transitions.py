@@ -93,4 +93,17 @@ class SlideTransition:
             pygame.display.flip()
             alpha += alpha_step
             next_image.set_alpha(alpha)
-            pygame.time.delay(10)  # Add a small delay to control the speed of the transition
+            pygame.time.delay(25)  # Add a small delay to control the speed of the transition
+
+    @staticmethod
+    def choose_transition(prev_image, next_image, window_size, screen, transition_type):
+        if transition_type == 'pull':
+            SlideTransition.pull(prev_image, next_image, window_size, screen)
+        elif transition_type == 'fade_out_slide_in':
+            SlideTransition.fade_out_slide_in(prev_image, next_image, window_size, screen)
+        elif transition_type == 'swipe_right':
+            SlideTransition.swipe_right(prev_image, next_image, window_size, screen)
+        elif transition_type == 'swipe_left':
+            SlideTransition.swipe_left(prev_image, next_image, window_size, screen)
+        elif transition_type == 'fade_in':
+            SlideTransition.fade_in(prev_image, next_image, window_size, screen)

@@ -114,29 +114,11 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                 if event.key == pygame.K_RIGHT and not show_overview:
                     prev_page = current_page
                     current_page = (current_page + 1) % len(scaled_images)
-                    if transition_type == 'pull':
-                        SlideTransition.pull(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'fade_out_slide_in':
-                        SlideTransition.fade_out_slide_in(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'swipe_right':
-                        SlideTransition.swipe_right(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'swipe_left':
-                        SlideTransition.swipe_left(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'fade_in':
-                        SlideTransition.fade_in(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
+                    SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
                 elif event.key == pygame.K_LEFT and not show_overview:
                     prev_page = current_page
                     current_page = (current_page - 1) % len(scaled_images)
-                    if transition_type == 'pull':
-                        SlideTransition.pull(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'fade_out_slide_in':
-                        SlideTransition.fade_out_slide_in(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'swipe_right':
-                        SlideTransition.swipe_right(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'swipe_left':
-                        SlideTransition.swipe_left(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'fade_in':
-                        SlideTransition.fade_in(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
+                    SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
                 elif event.key == pygame.K_f:  # Press 'f' to toggle full screen
                     toggle_fullscreen()
                     # Rescale images to new window size
@@ -148,16 +130,7 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                 if event.button == 1 and not show_overview:  # Left mouse button to go to the next image
                     prev_page = current_page
                     current_page = (current_page + 1) % len(scaled_images)
-                    if transition_type == 'pull':
-                        SlideTransition.pull(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'fade_out_slide_in':
-                        SlideTransition.fade_out_slide_in(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'swipe_right':
-                        SlideTransition.swipe_right(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'swipe_left':
-                        SlideTransition.swipe_left(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
-                    elif transition_type == 'fade_in':
-                        SlideTransition.fade_in(scaled_images[prev_page], scaled_images[current_page], window_size, screen)
+                    SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
 
         screen.fill((0, 0, 0))
 
