@@ -3,6 +3,7 @@ import pygame
 import os
 import constant
 from transitions import SlideTransition
+from config.transitions_config_reader import TransitionsConfig
 
 pygame.init()
 
@@ -114,10 +115,12 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                 if event.key == pygame.K_RIGHT and not show_overview:
                     prev_page = current_page
                     current_page = (current_page + 1) % len(scaled_images)
+                    transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
                     SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
                 elif event.key == pygame.K_LEFT and not show_overview:
                     prev_page = current_page
                     current_page = (current_page - 1) % len(scaled_images)
+                    transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
                     SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
                 elif event.key == pygame.K_f:  # Press 'f' to toggle full screen
                     toggle_fullscreen()
@@ -130,6 +133,7 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                 if event.button == 1 and not show_overview:  # Left mouse button to go to the next image
                     prev_page = current_page
                     current_page = (current_page + 1) % len(scaled_images)
+                    transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
                     SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
 
         screen.fill((0, 0, 0))
@@ -148,7 +152,7 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
 
 # Path to the PDF file
 file_name = 'demo'
-pdf_path = f'/home/danodya/Documents/{file_name}.pdf'
+pdf_path = f'pdfs/{file_name}.pdf'
 
 # Output folder for images
 output_folder = f'pdf_images/{file_name}'
@@ -157,6 +161,8 @@ os.makedirs(output_folder, exist_ok=True)
 # Convert PDF to images
 image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
 
+# load all transition types assigned to each slide
+slide_transitions = TransitionsConfig.load_transitions_config()
 # Display images using Pygame with specified transition type
-transition_type = 'fade_in'  # Options: 'pull', 'fade_out_slide_in', 'swipe_right', 'swipe_left', 'fade_in'
+transition_type = 'fade_out_slide_in'  # Options: 'pull', 'fade_out_slide_in', 'swipe_right', 'swipe_left', 'fade_in'
 display_images_with_pygame(image_paths, window_size, transition_type)
