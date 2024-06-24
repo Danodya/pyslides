@@ -1,0 +1,9 @@
+{
+    "demo": [
+        {"slide": 1, "transition": "pull"},
+        {"slide": 2, "transition": "fade_out_slide_in"},
+        {"slide": 3, "transition": "swipe_right"},
+        {"slide": 4, "transition": "swipe_left"},
+        {"slide": 5, "transition": "fade_in"}
+    ]
+}
