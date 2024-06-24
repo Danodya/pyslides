@@ -4,6 +4,14 @@
         {"slide": 2, "transition": "fade_out_slide_in"},
         {"slide": 3, "transition": "swipe_right"},
         {"slide": 4, "transition": "swipe_left"},
-        {"slide": 5, "transition": "fade_in"}
+        {"slide": 5, "transition": "fade_in"},
+        {"slide": 6, "transition": "pull"},
+        {"slide": 7, "transition": "fade_out_slide_in"},
+        {"slide": 8, "transition": "swipe_right"},
+        {"slide": 9, "transition": "swipe_left"},
+        {"slide": 10, "transition": "fade_in"},
+        {"slide": 11, "transition": "pull"},
+        {"slide": 12, "transition": "fade_out_slide_in"},
+        {"slide": 13, "transition": "swipe_right"}
     ]
 }
