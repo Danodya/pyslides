@@ -1,6 +1,8 @@
 import pygame
 
 class SlideTransition:
+    preset_alpha = 250
+
     @staticmethod
     def pull(prev_image, next_image, window_size, screen):
         start_pos = -window_size[1]  # Start above the screen
@@ -9,6 +11,10 @@ class SlideTransition:
 
         y_pos_prev = (window_size[1] - prev_image.get_height()) // 2  # Start at the center for the previous image
         y_pos_next = start_pos  # Start above the screen for the next image
+
+        # make the previous slide opacity full
+        prev_image.set_alpha(SlideTransition.preset_alpha)
+        next_image.set_alpha(SlideTransition.preset_alpha)
 
         while y_pos_next < end_pos:
             screen.fill((0, 0, 0))
@@ -30,6 +36,10 @@ class SlideTransition:
         y_pos_next = start_pos  # Start above the screen for the next image
         alpha = 255  # Start with full opacity for the previous image
 
+        # make the previous slide opacity full
+        prev_image.set_alpha(SlideTransition.preset_alpha)
+        next_image.set_alpha(SlideTransition.preset_alpha)
+
         while y_pos_next < end_pos:
             screen.fill((0, 0, 0))
             if alpha > 0:
@@ -39,7 +49,7 @@ class SlideTransition:
             pygame.display.flip()
             y_pos_next += step
             alpha -= alpha_step
-            pygame.time.delay(10)  # Add a small delay to control the speed of the transition
+            pygame.time.delay(10)  # Add a small delay to control the speed of the transition   
 
     @staticmethod
     def swipe_right(prev_image, next_image, window_size, screen):
@@ -49,6 +59,10 @@ class SlideTransition:
 
         x_pos_prev = (window_size[0] - prev_image.get_width()) // 2  # Start at the center for the previous image
         x_pos_next = start_pos  # Start to the left of the screen for the next image
+
+        # make the previous slide opacity full
+        prev_image.set_alpha(SlideTransition.preset_alpha)
+        next_image.set_alpha(SlideTransition.preset_alpha)
 
         while x_pos_next < end_pos:
             screen.fill((0, 0, 0))
@@ -68,6 +82,10 @@ class SlideTransition:
         x_pos_prev = (window_size[0] - prev_image.get_width()) // 2  # Start at the center for the previous image
         x_pos_next = start_pos  # Start to the right of the screen for the next image
 
+        # make the previous slide opacity full
+        prev_image.set_alpha(SlideTransition.preset_alpha)
+        next_image.set_alpha(SlideTransition.preset_alpha)
+
         while x_pos_next > end_pos:
             screen.fill((0, 0, 0))
             screen.blit(prev_image, (x_pos_prev, (window_size[1] - prev_image.get_height()) // 2))
@@ -82,6 +100,10 @@ class SlideTransition:
         start_alpha = 0
         end_alpha = 255
         alpha_step = 20
+
+        # make the previous slide opacity full
+        prev_image.set_alpha(SlideTransition.preset_alpha)
+        next_image.set_alpha(SlideTransition.preset_alpha)
 
         alpha = start_alpha
         next_image.set_alpha(alpha)
