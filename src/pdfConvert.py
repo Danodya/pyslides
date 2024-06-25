@@ -15,6 +15,8 @@ pygame.display.set_caption(constant.DISPLAY_CAPTION)
 
 is_fullscreen = False
 show_overview = False
+current_page = 0
+highlighted_page = 0
 
 # Function to toggle full screen
 def toggle_fullscreen():
@@ -76,7 +78,7 @@ def scale_image_to_fit(image, window_size):
     return scaled_image
 
 # Function to display thumbnails of all slides
-def display_overview(images, window_size):
+def display_overview(images, window_size, highlighted_page):
     rows = cols = int(len(images) ** 0.5) + 1
     margin = 10
     thumb_width = (window_size[0] - margin * (cols + 1)) // cols
@@ -89,14 +91,18 @@ def display_overview(images, window_size):
         col = i % cols
         x = margin + col * (thumb_width + margin)
         y = margin + row * (thumb_height + margin)
-        screen.blit(thumbnail, (x, y))
+        if i == highlighted_page:
+            screen.blit(thumbnail, (x, y))
+        else:
+            faded_thumbnail = thumbnail.copy()
+            faded_thumbnail.set_alpha(100)  # Set alpha for faded effect
+            screen.blit(faded_thumbnail, (x, y))
 
 # Function to display converted images
-def display_images_with_pygame(image_paths, window_size, transition_type):
-    global show_overview
+def display_images_with_pygame(image_paths, window_size):
+    global show_overview, current_page, highlighted_page
     images = [pygame.image.load(img) for img in image_paths]
     scaled_images = [scale_image_to_fit(img, window_size) for img in images]
-    current_page = 0
 
     # Display the first slide without a transition
     screen.fill((0, 0, 0))
@@ -129,17 +135,55 @@ def display_images_with_pygame(image_paths, window_size, transition_type):
                     scaled_images = [scale_image_to_fit(img, window_size) for img in images]
                 elif event.key == pygame.K_TAB:  # Press 'Tab' to toggle overview mode
                     show_overview = not show_overview
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and not show_overview:  # Left mouse button to go to the next image
-                    prev_page = current_page
-                    current_page = (current_page + 1) % len(scaled_images)
-                    transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
-                    SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
+                elif event.key == pygame.K_RETURN and show_overview:  # Press 'Enter' to view highlighted slide
+                    current_page = highlighted_page
+                    show_overview = False
+                elif event.key == pygame.K_UP and show_overview:
+                    highlighted_page = (highlighted_page - 1) % len(scaled_images)
+                elif event.key == pygame.K_DOWN and show_overview:
+                    highlighted_page = (highlighted_page + 1) % len(scaled_images)
+                elif event.key == pygame.K_RIGHT and show_overview:
+                    highlighted_page = (highlighted_page + 1) % len(scaled_images)
+                elif event.key == pygame.K_LEFT and show_overview:
+                    highlighted_page = (highlighted_page - 1) % len(scaled_images)
+            elif event.type == pygame.MOUSEBUTTONDOWN and show_overview:
+                if event.button == 1:  # Left mouse button
+                    pos = pygame.mouse.get_pos()
+                    rows = cols = int(len(scaled_images) ** 0.5) + 1
+                    margin = 10
+                    thumb_width = (window_size[0] - margin * (cols + 1)) // cols
+                    thumb_height = (window_size[1] - margin * (rows + 1)) // rows
+
+                    for i in range(len(scaled_images)):
+                        row = i // cols
+                        col = i % cols
+                        x = margin + col * (thumb_width + margin)
+                        y = margin + row * (thumb_height + margin)
+                        if x <= pos[0] <= x + thumb_width and y <= pos[1] <= y + thumb_height:
+                            highlighted_page = i
+                            current_page = highlighted_page
+                            show_overview = False
+                            break
+            elif event.type == pygame.MOUSEMOTION and show_overview:
+                pos = pygame.mouse.get_pos()
+                rows = cols = int(len(scaled_images) ** 0.5) + 1
+                margin = 10
+                thumb_width = (window_size[0] - margin * (cols + 1)) // cols
+                thumb_height = (window_size[1] - margin * (rows + 1)) // rows
+
+                for i in range(len(scaled_images)):
+                    row = i // cols
+                    col = i % cols
+                    x = margin + col * (thumb_width + margin)
+                    y = margin + row * (thumb_height + margin)
+                    if x <= pos[0] <= x + thumb_width and y <= pos[1] <= y + thumb_height:
+                        highlighted_page = i
+                        break
 
         screen.fill((0, 0, 0))
 
         if show_overview:
-            display_overview(images, window_size)
+            display_overview(images, window_size, highlighted_page)
         else:
             image = scaled_images[current_page]
             # Center the image on the screen
@@ -163,6 +207,5 @@ image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
 
 # load all transition types assigned to each slide
 slide_transitions = TransitionsConfig.load_transitions_config()
-# Display images using Pygame with specified transition type
-transition_type = 'fade_out_slide_in'  # Options: 'pull', 'fade_out_slide_in', 'swipe_right', 'swipe_left', 'fade_in'
-display_images_with_pygame(image_paths, window_size, transition_type)
+# Display images using Pygame
+display_images_with_pygame(image_paths, window_size)
