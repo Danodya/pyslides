@@ -157,6 +157,7 @@ def highlight_thumbnail(mouse_pos, images, window_size):
     for i in range(len(images)):
         x = margin + (i % cols) * (thumb_width + margin)
         y = margin + (i // cols) * (thumb_height + margin)
+        images[i].set_alpha(250) #just a quick fix for fade out slide in transition issue
         if x <= mouse_pos[0] <= x + thumb_width and y <= mouse_pos[1] <= y + thumb_height:
             focused_page = i
             break
