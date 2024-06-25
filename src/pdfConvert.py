@@ -10,49 +10,39 @@ pygame.init()
 # Define the initial window size
 window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
 screen = pygame.display.set_mode(window_size)
-# Set caption of the window
 pygame.display.set_caption(constant.DISPLAY_CAPTION)
 
 is_fullscreen = False
 show_overview = False
 current_page = 0
-highlighted_page = 0
+focused_page = 0
 
 # Function to toggle full screen
 def toggle_fullscreen():
     global screen, window_size, is_fullscreen
-    if screen.get_flags() & pygame.FULLSCREEN:
+    if is_fullscreen:
         window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
         screen = pygame.display.set_mode(window_size)
         is_fullscreen = False
     else:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        window_size = screen.get_size()  # Update window_size to full screen size
+        window_size = screen.get_size()
         is_fullscreen = True
 
 # Function to convert pdf to images
 def convert_pdf_to_images(pdf_path, output_folder, window_size):
-    # Open the PDF file
     pdf_document = fitz.open(pdf_path)
     images = []
 
-    # Get the screen width and height
     screen_width, screen_height = window_size
-
-    # Higher resolution scaling factor
     high_res_factor = 2.0
 
-    # Iterate through each page
     for page_num in range(len(pdf_document)):
         page = pdf_document.load_page(page_num)
-        rect = page.rect  # get the dimensions of the page
+        rect = page.rect
 
-        # multiply the minimum of the width and height scaling factors by high resolution factor 
-        # to calculate a uniform scaling factor to maintain aspect ratio
         zoom_factor = min(screen_width / rect.width, screen_height / rect.height) * high_res_factor
-        matrix = fitz.Matrix(zoom_factor, zoom_factor)  # transformation matrix
-
-        # Render the page to a high-resolution pixmap (creates a bitmap image of the page at the specified resolution)
+        matrix = fitz.Matrix(zoom_factor, zoom_factor)
         pix = page.get_pixmap(matrix=matrix)
 
         image_path = os.path.join(output_folder, f"page_{page_num}.png")
@@ -65,17 +55,9 @@ def convert_pdf_to_images(pdf_path, output_folder, window_size):
 def scale_image_to_fit(image, window_size):
     image_width, image_height = image.get_size()
     window_width, window_height = window_size
-
-    # Calculate the scaling factors
     scale_factor = min(window_width / image_width, window_height / image_height)
-
-    # Calculate the new size
-    new_width = int(image_width * scale_factor)
-    new_height = int(image_height * scale_factor)
-
-    # Scale the image
-    scaled_image = pygame.transform.scale(image, (new_width, new_height))
-    return scaled_image
+    new_size = (int(image_width * scale_factor), int(image_height * scale_factor))
+    return pygame.transform.scale(image, new_size)
 
 # Function to display thumbnails of all slides
 def display_overview(images, window_size, highlighted_page):
@@ -91,29 +73,31 @@ def display_overview(images, window_size, highlighted_page):
         col = i % cols
         x = margin + col * (thumb_width + margin)
         y = margin + row * (thumb_height + margin)
-        if i == highlighted_page:
-            screen.blit(thumbnail, (x, y))
-        else:
-            faded_thumbnail = thumbnail.copy()
-            faded_thumbnail.set_alpha(100)  # Set alpha for faded effect
-            screen.blit(faded_thumbnail, (x, y))
+        if i != highlighted_page:
+            thumbnail.set_alpha(100)  # Set alpha for faded effect
+        screen.blit(thumbnail, (x, y))
 
 # Function to display converted images
 def display_images_with_pygame(image_paths, window_size):
-    global show_overview, current_page, highlighted_page
+    global show_overview, current_page, focused_page
     images = [pygame.image.load(img) for img in image_paths]
     scaled_images = [scale_image_to_fit(img, window_size) for img in images]
 
-    # Display the first slide without a transition
-    screen.fill((0, 0, 0))
-    image = scaled_images[current_page]
-    image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
-    screen.blit(image, image_rect.topleft)
-    pygame.display.flip()
+    def display_slide():
+        screen.fill((0, 0, 0))
+        image = scaled_images[current_page]
+        image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
+        screen.blit(image, image_rect.topleft)
+        pygame.display.flip()
 
+    def apply_transition(prev_page, current_page):
+        transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
+        SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
+
+    display_slide()
     running = True
+
     while running:
-        # event handler
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -121,33 +105,25 @@ def display_images_with_pygame(image_paths, window_size):
                 if event.key == pygame.K_RIGHT and not show_overview:
                     prev_page = current_page
                     current_page = (current_page + 1) % len(scaled_images)
-                    transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
-                    SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
+                    apply_transition(prev_page, current_page)
                 elif event.key == pygame.K_LEFT and not show_overview:
                     prev_page = current_page
                     current_page = (current_page - 1) % len(scaled_images)
-                    transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
-                    SlideTransition.choose_transition(scaled_images[prev_page], scaled_images[current_page], window_size, screen, transition_type)
-                elif event.key == pygame.K_f:  # Press 'f' to toggle full screen
+                    apply_transition(prev_page, current_page)
+                elif event.key == pygame.K_f:
                     toggle_fullscreen()
-                    # Rescale images to new window size
                     window_size = screen.get_size()
                     scaled_images = [scale_image_to_fit(img, window_size) for img in images]
-                elif event.key == pygame.K_TAB:  # Press 'Tab' to toggle overview mode
+                elif event.key == pygame.K_TAB:
                     show_overview = not show_overview
-                elif event.key == pygame.K_RETURN and show_overview:  # Press 'Enter' to view highlighted slide
-                    current_page = highlighted_page
+                elif event.key == pygame.K_RETURN and show_overview:
+                    current_page = focused_page
                     show_overview = False
-                elif event.key == pygame.K_UP and show_overview:
-                    highlighted_page = (highlighted_page - 1) % len(scaled_images)
-                elif event.key == pygame.K_DOWN and show_overview:
-                    highlighted_page = (highlighted_page + 1) % len(scaled_images)
-                elif event.key == pygame.K_RIGHT and show_overview:
-                    highlighted_page = (highlighted_page + 1) % len(scaled_images)
-                elif event.key == pygame.K_LEFT and show_overview:
-                    highlighted_page = (highlighted_page - 1) % len(scaled_images)
+                elif event.key in [pygame.K_RIGHT, pygame.K_LEFT] and show_overview:
+                    direction = 1 if event.key == pygame.K_RIGHT else -1
+                    focused_page = (focused_page + direction) % len(scaled_images)
             elif event.type == pygame.MOUSEBUTTONDOWN and show_overview:
-                if event.button == 1:  # Left mouse button
+                if event.button == 1:
                     pos = pygame.mouse.get_pos()
                     rows = cols = int(len(scaled_images) ** 0.5) + 1
                     margin = 10
@@ -160,8 +136,8 @@ def display_images_with_pygame(image_paths, window_size):
                         x = margin + col * (thumb_width + margin)
                         y = margin + row * (thumb_height + margin)
                         if x <= pos[0] <= x + thumb_width and y <= pos[1] <= y + thumb_height:
-                            highlighted_page = i
-                            current_page = highlighted_page
+                            focused_page = i
+                            current_page = focused_page
                             show_overview = False
                             break
             elif event.type == pygame.MOUSEMOTION and show_overview:
@@ -177,19 +153,16 @@ def display_images_with_pygame(image_paths, window_size):
                     x = margin + col * (thumb_width + margin)
                     y = margin + row * (thumb_height + margin)
                     if x <= pos[0] <= x + thumb_width and y <= pos[1] <= y + thumb_height:
-                        highlighted_page = i
+                        focused_page = i
                         break
 
         screen.fill((0, 0, 0))
 
         if show_overview:
-            display_overview(images, window_size, highlighted_page)
+            display_overview(images, window_size, focused_page)
         else:
-            image = scaled_images[current_page]
-            # Center the image on the screen
-            image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
-            screen.blit(image, image_rect.topleft)
-        
+            display_slide()
+
         pygame.display.flip()
 
     pygame.quit()
@@ -205,7 +178,7 @@ os.makedirs(output_folder, exist_ok=True)
 # Convert PDF to images
 image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
 
-# load all transition types assigned to each slide
+# Load all transition types assigned to each slide
 slide_transitions = TransitionsConfig.load_transitions_config()
 # Display images using Pygame
 display_images_with_pygame(image_paths, window_size)
