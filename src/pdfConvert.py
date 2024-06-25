@@ -78,7 +78,7 @@ def display_slide(images, current_page, window_size):
     pygame.display.flip()
 
 # Function to handle keydown events
-def handle_keydown(event, images, window_size):
+def handle_keydown(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview
 
     if event.key == pygame.K_RIGHT:
@@ -87,14 +87,14 @@ def handle_keydown(event, images, window_size):
         else:
             prev_page = current_page
             current_page = (current_page + 1) % len(images)
-            apply_transition(prev_page, current_page, images)
+            apply_transition(prev_page, current_page, images, slide_transitions)
     elif event.key == pygame.K_LEFT:
         if show_overview:
             focused_page = (focused_page - 1) % len(images)
         else:
             prev_page = current_page
             current_page = (current_page - 1) % len(images)
-            apply_transition(prev_page, current_page, images)
+            apply_transition(prev_page, current_page, images, slide_transitions)
     elif event.key == pygame.K_f:
         toggle_fullscreen()
         window_size = screen.get_size()
@@ -106,7 +106,7 @@ def handle_keydown(event, images, window_size):
         show_overview = False
 
 # Function to handle mouse events
-def handle_mouse(event, images, window_size):
+def handle_mouse(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview
 
     if event.type == pygame.MOUSEBUTTONDOWN:
@@ -116,14 +116,16 @@ def handle_mouse(event, images, window_size):
             else:
                 prev_page = current_page
                 current_page = (current_page + 1) % len(images)
-                apply_transition(prev_page, current_page, images)
+                apply_transition(prev_page, current_page, images, slide_transitions)
     elif event.type == pygame.MOUSEMOTION and show_overview:
         highlight_thumbnail(event.pos, images, window_size)
 
 # Function to apply a slide transition
-def apply_transition(prev_page, current_page, images):
-    transition_type = TransitionsConfig.get_transition_type(slide_transitions, current_page)
-    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type)
+def apply_transition(prev_page, current_page, images, slide_transitions):
+    transition_config = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+    transition_type = transition_config["transition"]
+    duration = float(transition_config["duration"].replace('s', ''))
+    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type, duration)
 
 # Function to select a thumbnail based on mouse click position
 def select_thumbnail(mouse_pos, images, window_size):
@@ -155,7 +157,6 @@ def highlight_thumbnail(mouse_pos, images, window_size):
     for i in range(len(images)):
         x = margin + (i % cols) * (thumb_width + margin)
         y = margin + (i // cols) * (thumb_height + margin)
-        images[i].set_alpha(250) # just a quick fix for fade  out slide in trans issue
         if x <= mouse_pos[0] <= x + thumb_width and y <= mouse_pos[1] <= y + thumb_height:
             focused_page = i
             break
@@ -164,7 +165,7 @@ def main():
     global window_size
 
     # Define paths for the PDF file and output images
-    file_name = 'demo'
+    file_name = 'demo'  # Specify the name of the PDF file here
     pdf_path = f'pdfs/{file_name}.pdf'
     output_folder = f'pdf_images/{file_name}'
     os.makedirs(output_folder, exist_ok=True)
@@ -174,9 +175,9 @@ def main():
     image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
     images = [scale_image_to_fit(pygame.image.load(img_path), window_size) for img_path in image_paths]
 
-    # Load slide transitions configuration
+    # Load slide transitions configuration for the specified PDF
     global slide_transitions
-    slide_transitions = TransitionsConfig.load_transitions_config()
+    slide_transitions = TransitionsConfig.load_transitions_config(file_name)
 
     running = True
     while running:
@@ -184,9 +185,9 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                handle_keydown(event, images, window_size)
+                handle_keydown(event, images, window_size, slide_transitions)
             elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
-                handle_mouse(event, images, window_size)
+                handle_mouse(event, images, window_size, slide_transitions)
 
         if show_overview:
             display_overview(images, window_size, focused_page)
