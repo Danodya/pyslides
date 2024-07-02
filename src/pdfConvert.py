@@ -18,16 +18,18 @@ is_fullscreen = False
 show_overview = False
 current_page = 0
 focused_page = 0
+images = []
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
-    global screen, window_size, is_fullscreen
+    global screen, window_size, is_fullscreen, images
     is_fullscreen = not is_fullscreen
     if is_fullscreen:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     else:
         screen = pygame.display.set_mode((constant.SCREEN_WIDTH, constant.SCREEN_HIGHT))
     window_size = screen.get_size()
+    images = [scale_image_to_fit(pygame.image.load(img_path), window_size) for img_path in image_paths]
 
 # Function to convert PDF pages to images
 def convert_pdf_to_images(pdf_path, output_folder, window_size):
@@ -97,13 +99,15 @@ def handle_keydown(event, images, window_size, slide_transitions):
             apply_transition(prev_page, current_page, images, slide_transitions)
     elif event.key == pygame.K_f:
         toggle_fullscreen()
-        window_size = screen.get_size()
-        images[:] = [scale_image_to_fit(pygame.image.load(img_path), window_size) for img_path in image_paths]
     elif event.key == pygame.K_TAB:
         show_overview = not show_overview
     elif event.key == pygame.K_RETURN and show_overview:
         current_page = focused_page
         show_overview = False
+    elif event.key == pygame.K_UP:
+        scroll_slide(images, current_page, -1)
+    elif event.key == pygame.K_DOWN:
+        scroll_slide(images, current_page, 1)
 
 # Function to handle mouse events
 def handle_mouse(event, images, window_size, slide_transitions):
@@ -117,6 +121,10 @@ def handle_mouse(event, images, window_size, slide_transitions):
                 prev_page = current_page
                 current_page = (current_page + 1) % len(images)
                 apply_transition(prev_page, current_page, images, slide_transitions)
+        elif event.button == 4:  # Scroll up
+            scroll_slide(images, current_page, -1)
+        elif event.button == 5:  # Scroll down
+            scroll_slide(images, current_page, 1)
     elif event.type == pygame.MOUSEMOTION and show_overview:
         highlight_thumbnail(event.pos, images, window_size)
 
@@ -157,16 +165,24 @@ def highlight_thumbnail(mouse_pos, images, window_size):
     for i in range(len(images)):
         x = margin + (i % cols) * (thumb_width + margin)
         y = margin + (i // cols) * (thumb_height + margin)
-        images[i].set_alpha(250) #just a quick fix for fade out slide in transition issue
+        images[i].set_alpha(250)  # just a quick fix for fade out slide in transition issue
         if x <= mouse_pos[0] <= x + thumb_width and y <= mouse_pos[1] <= y + thumb_height:
             focused_page = i
             break
+
+# Function to scroll through slides
+def scroll_slide(images, current_page, direction):
+    global show_overview
+    if not show_overview:
+        prev_page = current_page
+        current_page = (current_page + direction) % len(images)
+        SlideTransition.partial_sliding(images[prev_page], images[current_page], window_size, screen, duration=1)
 
 def main():
     global window_size
 
     # Define paths for the PDF file and output images
-    file_name = 'demo'  # Specify the name of the PDF file here
+    file_name = 'sample'  # Specify the name of the PDF file here
     pdf_path = f'pdfs/{file_name}.pdf'
     output_folder = f'pdf_images/{file_name}'
     os.makedirs(output_folder, exist_ok=True)
