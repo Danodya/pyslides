@@ -18,18 +18,16 @@ is_fullscreen = False
 show_overview = False
 current_page = 0
 focused_page = 0
-images = []
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
-    global screen, window_size, is_fullscreen, images
+    global screen, window_size, is_fullscreen
     is_fullscreen = not is_fullscreen
     if is_fullscreen:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     else:
         screen = pygame.display.set_mode((constant.SCREEN_WIDTH, constant.SCREEN_HIGHT))
     window_size = screen.get_size()
-    images = [scale_image_to_fit(pygame.image.load(img_path), window_size) for img_path in image_paths]
 
 # Function to convert PDF pages to images
 def convert_pdf_to_images(pdf_path, output_folder, window_size):
@@ -99,6 +97,8 @@ def handle_keydown(event, images, window_size, slide_transitions):
             apply_transition(prev_page, current_page, images, slide_transitions)
     elif event.key == pygame.K_f:
         toggle_fullscreen()
+        window_size = screen.get_size()
+        images[:] = [scale_image_to_fit(pygame.image.load(img_path), window_size) for img_path in image_paths]
     elif event.key == pygame.K_TAB:
         show_overview = not show_overview
     elif event.key == pygame.K_RETURN and show_overview:
@@ -182,7 +182,7 @@ def main():
     global window_size
 
     # Define paths for the PDF file and output images
-    file_name = 'sample'  # Specify the name of the PDF file here
+    file_name = 'demo'  # Specify the name of the PDF file here
     pdf_path = f'pdfs/{file_name}.pdf'
     output_folder = f'pdf_images/{file_name}'
     os.makedirs(output_folder, exist_ok=True)
@@ -209,7 +209,8 @@ def main():
         if show_overview:
             display_overview(images, window_size, focused_page)
         else:
-            display_slide(images, current_page, window_size)
+            if current_page == 0:
+                display_slide(images, current_page, window_size)
 
         pygame.display.flip()
 
