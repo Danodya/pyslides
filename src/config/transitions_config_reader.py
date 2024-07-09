@@ -4,15 +4,14 @@ class TransitionsConfig:
     
     # Load the transitions configuration file
     @staticmethod
-    def load_transitions_config(pdf_name):
+    def load_transitions_config(config_file_name):
         # Path to the transitions configuration file
-        config_path = '/home/danodya/Documents/22-24_CE901-CE911-CF981-SU_weerasinghe_danodya/src/config/transitions_config.json'
+        config_path = f'/Users/danodyaweerasinghe/Documents/MSc/Dissertation/22-24_CE901-CE911-CF981-SU_weerasinghe_danodya/src/config/{config_file_name}'
         with open(config_path, 'r') as config_file:
             config = json.load(config_file)
         
-        # Load transitions for the specified PDF
-        pdf_config = config.get(pdf_name, {})
-        return {int(key.split()[1]): {"transition": value["transition"], "duration": value["transition-duration"]} for key, value in pdf_config.items()}
+        # Load transitions for the slides in the provided configuration
+        return {int(key.split()[1]): {"transition": value["transition"], "duration": value["transition-duration"]} for key, value in config.items()}
 
     #Function to get the transition type and duration for a given slide
     @staticmethod
