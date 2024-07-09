@@ -4,6 +4,7 @@ import os
 import constant
 from transitions import SlideTransition
 from config.transitions_config_reader import TransitionsConfig
+import time
 
 # Initialize Pygame
 pygame.init()
@@ -18,6 +19,10 @@ is_fullscreen = False
 show_overview = False
 current_page = 0
 focused_page = 0
+prev_slide_position = 0  # previous slide y position for partial slide transition scrolling
+scrolling = False  # Flag to indicate if scrolling is active
+scroll_direction = 0  # Direction of scrolling: -1 for up, 1 for down
+scroll_start_time = 0  # Time when scrolling started
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
@@ -79,7 +84,7 @@ def display_slide(images, current_page, window_size):
 
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview
+    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
 
     if event.key == pygame.K_RIGHT:
         if show_overview:
@@ -105,9 +110,20 @@ def handle_keydown(event, images, window_size, slide_transitions):
         current_page = focused_page
         show_overview = False
     elif event.key == pygame.K_UP:
-        scroll_slide(images, current_page, -1)
+        scrolling = True
+        scroll_direction = -1
+        scroll_start_time = time.time()
     elif event.key == pygame.K_DOWN:
-        scroll_slide(images, current_page, 1)
+        scrolling = True
+        scroll_direction = 1
+        scroll_start_time = time.time()
+
+def handle_keyup(event):
+    global scrolling, scroll_direction
+
+    if event.key in (pygame.K_UP, pygame.K_DOWN):
+        scrolling = False
+        scroll_direction = 0
 
 # Function to handle mouse events
 def handle_mouse(event, images, window_size, slide_transitions):
@@ -122,18 +138,25 @@ def handle_mouse(event, images, window_size, slide_transitions):
                 current_page = (current_page + 1) % len(images)
                 apply_transition(prev_page, current_page, images, slide_transitions)
         elif event.button == 4:  # Scroll up
-            scroll_slide(images, current_page, -1)
+            scroll_slide(images, -1)
         elif event.button == 5:  # Scroll down
-            scroll_slide(images, current_page, 1)
+            scroll_slide(images, 1)
     elif event.type == pygame.MOUSEMOTION and show_overview:
         highlight_thumbnail(event.pos, images, window_size)
 
+
 # Function to apply a slide transition
 def apply_transition(prev_page, current_page, images, slide_transitions):
+    global prev_slide_position
     transition_config = TransitionsConfig.get_transition_config(slide_transitions, current_page)
     transition_type = transition_config["transition"]
     duration = float(transition_config["duration"].replace('s', ''))
-    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type, duration)
+    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type,
+                                      duration)
+    if transition_type == constant.PARTIAL_SLIDE_TRANSITION:
+        halfway_pos = window_size[1] / 4
+        prev_start_pos = ((window_size[1] - images[prev_page].get_height()) // 2)
+        prev_slide_position = prev_start_pos - halfway_pos
 
 # Function to select a thumbnail based on mouse click position
 def select_thumbnail(mouse_pos, images, window_size):
@@ -170,16 +193,29 @@ def highlight_thumbnail(mouse_pos, images, window_size):
             focused_page = i
             break
 
-# Function to scroll through slides
-def scroll_slide(images, current_page, direction):
-    global show_overview
-    if not show_overview:
-        prev_page = current_page
-        current_page = (current_page + direction) % len(images)
-        SlideTransition.partial_sliding(images[prev_page], images[current_page], window_size, screen, duration=1)
+# Function to scroll slides
+def scroll_slide(images, direction):
+    global current_page, window_size, screen, prev_slide_position
+    scroll_step = 10  # Pixels to move per scroll step
+    image = images[current_page - 1]
+    next_image = images[current_page]
+    end_pos = (window_size[1] - next_image.get_height()) // 2  # end scrolling when main slide at the center
+    if (prev_slide_position + image.get_height() > end_pos) if direction > 0 else (prev_slide_position < end_pos):
+        prev_start_pos = prev_slide_position
+        next_start_pos = prev_start_pos + image.get_height()
+
+        y_pos_prev = prev_start_pos - scroll_step * direction
+        y_pos_next = next_start_pos - scroll_step * direction
+
+        screen.fill((0, 0, 0))
+        screen.blit(image, ((window_size[0] - image.get_width()) // 2, y_pos_prev))
+        screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, y_pos_next))
+        pygame.display.flip()
+
+        prev_slide_position = y_pos_prev
 
 def main():
-    global window_size
+    global window_size, scrolling, scroll_direction
 
     # Define paths for the PDF file and output images
     file_name = 'demo'  # Specify the name of the PDF file here
@@ -197,19 +233,32 @@ def main():
     slide_transitions = TransitionsConfig.load_transitions_config(file_name)
 
     running = True
+    last_scroll_time = 0  # Track the last time we scrolled
+
     while running:
+        current_time = time.time()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
                 handle_keydown(event, images, window_size, slide_transitions)
+            elif event.type == pygame.KEYUP:
+                handle_keyup(event)
             elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
                 handle_mouse(event, images, window_size, slide_transitions)
+
+        if scrolling and current_time - last_scroll_time > 0.1:  # Scroll every 0.1 seconds
+            scroll_slide(images, scroll_direction)
+            last_scroll_time = current_time
 
         if show_overview:
             display_overview(images, window_size, focused_page)
         else:
-            if current_page == 0:
+            transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+            transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page - 1)
+            transition_type_current = transition_config_current["transition"]
+            transition_type_prev = transition_config_prev["transition"]
+            if transition_type_current != constant.PARTIAL_SLIDE_TRANSITION and transition_type_prev != constant.PARTIAL_SLIDE_TRANSITION :
                 display_slide(images, current_page, window_size)
 
         pygame.display.flip()
