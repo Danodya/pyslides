@@ -185,33 +185,33 @@ class SlideTransition:
 
     @staticmethod
     def partial_sliding(prev_image, next_image, window_size, screen, duration=1, scroll_step=20):
-                # Record the start and end time for the transition
-                start_time = time.time()
-                end_time = start_time + duration
+        # Record the start and end time for the transition
+        start_time = time.time()
+        end_time = start_time + duration
 
-                # Calculate start and end positions for both images
-                prev_start_pos = (window_size[1] - prev_image.get_height()) // 2
-                next_start_pos = window_size[1]
-                halfway_pos = window_size[1] / 4
+        # Calculate start and end positions for both images
+        prev_start_pos = (window_size[1] - prev_image.get_height()) // 2
+        next_start_pos = window_size[1]
+        halfway_pos = window_size[1] / 4
 
-                # Distance the next slide needs to move
-                distance_to_move = next_start_pos - (prev_start_pos + prev_image.get_height())
+        # Distance the next slide needs to move
+        distance_to_move = next_start_pos - (prev_start_pos + prev_image.get_height())
 
-                while time.time() < end_time:
-                    elapsed_time = time.time() - start_time
-                    progress = elapsed_time / duration
+        while time.time() < end_time:
+            elapsed_time = time.time() - start_time
+            progress = elapsed_time / duration
 
-                    # Move previous image up halfway and next image up from the bottom to just below the previous image
-                    y_pos_prev = prev_start_pos - halfway_pos * progress
+            # Move previous image up halfway and next image up from the bottom to just below the previous image
+            y_pos_prev = prev_start_pos - halfway_pos * progress
 
-                    # Calculate current vertical position of the next slide
-                    y_pos_next = next_start_pos - (halfway_pos + distance_to_move) * progress
+            # Calculate current vertical position of the next slide
+            y_pos_next = next_start_pos - (halfway_pos + distance_to_move) * progress
 
-                    screen.fill((0, 0, 0))
-                    screen.blit(prev_image, ((window_size[0] - prev_image.get_width()) // 2, y_pos_prev))
-                    screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, y_pos_next))
-                    pygame.display.flip()
-                    pygame.time.delay(10)
+            screen.fill((0, 0, 0))
+            screen.blit(prev_image, ((window_size[0] - prev_image.get_width()) // 2, y_pos_prev))
+            screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, y_pos_next))
+            pygame.display.flip()
+            pygame.time.delay(10)
 
     @staticmethod
     def choose_transition(prev_image, next_image, window_size, screen, transition_type, duration):
