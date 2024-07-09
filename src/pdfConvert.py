@@ -1,3 +1,5 @@
+import argparse
+
 import fitz  # PyMuPDF
 import pygame
 import os
@@ -217,9 +219,18 @@ def scroll_slide(images, direction):
 def main():
     global window_size, scrolling, scroll_direction
 
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
+    parser.add_argument("pdf_file", help="Path to the PDF file")
+    parser.add_argument("config_file", help="Path to the transitions config file")
+    args = parser.parse_args()
+
+    pdf_file = args.pdf_file
+    config_file = args.config_file
+
     # Define paths for the PDF file and output images
-    file_name = 'demo'  # Specify the name of the PDF file here
-    pdf_path = f'pdfs/{file_name}.pdf'
+    file_name = pdf_file  # Specify the name of the PDF file here
+    pdf_path = f'pdfs/{file_name}'
     output_folder = f'pdf_images/{file_name}'
     os.makedirs(output_folder, exist_ok=True)
 
@@ -230,7 +241,7 @@ def main():
 
     # Load slide transitions configuration for the specified PDF
     global slide_transitions
-    slide_transitions = TransitionsConfig.load_transitions_config(file_name)
+    slide_transitions = TransitionsConfig.load_transitions_config(config_file)
 
     running = True
     last_scroll_time = 0  # Track the last time we scrolled
