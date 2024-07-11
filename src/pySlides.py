@@ -4,10 +4,13 @@ import sys
 import fitz  # PyMuPDF
 import pygame
 import os
-import constant
-from transitions import SlideTransition
-from config.transitions_config_reader import TransitionsConfig
+import src.constant as constant
+from src.transitions import SlideTransition
+from src.config.transitions_config_reader import TransitionsConfig
 import time
+
+# Ensure the src directory is in the Python path
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
 
 # Initialize Pygame
 pygame.init()
@@ -81,6 +84,7 @@ def display_overview(images, window_size, highlighted_page):
 def display_slide(images, current_page, window_size):
     screen.fill((0, 0, 0))
     image = images[current_page]
+    image.set_alpha(250)
     image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
     screen.blit(image, image_rect.topleft)
     pygame.display.flip()
@@ -95,14 +99,22 @@ def handle_keydown(event, images, window_size, slide_transitions):
         else:
             prev_page = current_page
             current_page = (current_page + 1) % len(images)
-            apply_transition(prev_page, current_page, images, slide_transitions)
+            print('right ', current_page)
+            apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
     elif event.key == pygame.K_LEFT:
         if show_overview:
             focused_page = (focused_page - 1) % len(images)
         else:
             prev_page = current_page
             current_page = (current_page - 1) % len(images)
-            apply_transition(prev_page, current_page, images, slide_transitions)
+            print('left ', current_page)
+            transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+            reversal_strategy = transition_config_current["reversal-strategy"]
+            if reversal_strategy != constant.NONE:
+                apply_transition(prev_page, current_page, images, slide_transitions,
+                                 TransitionsConfig.check_reversal_strategy(reversal_strategy))
+            else:
+                display_slide(images, current_page, window_size)
     elif event.key == pygame.K_f:
         toggle_fullscreen()
         window_size = screen.get_size()
@@ -139,7 +151,7 @@ def handle_mouse(event, images, window_size, slide_transitions):
             else:
                 prev_page = current_page
                 current_page = (current_page + 1) % len(images)
-                apply_transition(prev_page, current_page, images, slide_transitions)
+                apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
         elif event.button == 4:  # Scroll up
             scroll_slide(images, -1)
         elif event.button == 5:  # Scroll down
@@ -149,17 +161,17 @@ def handle_mouse(event, images, window_size, slide_transitions):
 
 
 # Function to apply a slide transition
-def apply_transition(prev_page, current_page, images, slide_transitions):
+def apply_transition(prev_page, current_page, images, slide_transitions, reverse=False):
     global prev_slide_position
     transition_config = TransitionsConfig.get_transition_config(slide_transitions, current_page)
     transition_type = transition_config["transition"]
     duration = float(transition_config["duration"].replace('s', ''))
-    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type,
-                                      duration)
+    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type, duration, reverse)
     if transition_type == constant.PARTIAL_SLIDE_TRANSITION:
         halfway_pos = window_size[1] / 4
         prev_start_pos = ((window_size[1] - images[prev_page].get_height()) // 2)
         prev_slide_position = prev_start_pos - halfway_pos
+
 
 # Function to select a thumbnail based on mouse click position
 def select_thumbnail(mouse_pos, images, window_size):

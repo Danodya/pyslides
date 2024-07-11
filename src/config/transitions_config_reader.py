@@ -1,4 +1,6 @@
 import json
+import src.constant as constant
+
 
 class TransitionsConfig:
     
@@ -11,9 +13,22 @@ class TransitionsConfig:
             config = json.load(config_file)
         
         # Load transitions for the slides in the provided configuration
-        return {int(key.split()[1]): {"transition": value["transition"], "duration": value["transition-duration"]} for key, value in config.items()}
+        return {int(key.split()[1]): {"transition": value["transition"], "duration": value["transition-duration"],
+                                      "reversal-strategy": value["reversal-strategy"]} for key, value in config.items()}
 
-    #Function to get the transition type and duration for a given slide
+    # Function to get the transition type and duration for a given slide
     @staticmethod
     def get_transition_config(slide_transitions, slide_number):
-        return slide_transitions.get(slide_number, {"transition": "fade_in", "duration": "1s"})  # Default transition and duration
+        return slide_transitions.get(slide_number,
+                                     {"transition": "fade_in", "duration": "1s", "reversal-strategy": "keep-original"})
+        # Default transition, duration and reverse strategy
+
+    # Function to check the reversal strategy of a given slide
+    @staticmethod
+    def check_reversal_strategy(reversal_strategy_type):
+        match reversal_strategy_type:
+            case constant.INVERT_TRANSITION:
+                return True
+            case constant.KEEP_ORIGINAL:
+                return False
+
