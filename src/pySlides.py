@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 import fitz  # PyMuPDF
 import pygame
@@ -221,18 +222,39 @@ def main():
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
-    parser.add_argument("pdf_file", help="Path to the PDF file")
-    parser.add_argument("config_file", help="Path to the transitions config file")
+    parser.add_argument("pdf_file", help="PDF file name")
+    parser.add_argument("--config_file", help="Transitions config file name")
     args = parser.parse_args()
 
+    # pdf file from the arguments
     pdf_file = args.pdf_file
-    config_file = args.config_file
 
     # Define paths for the PDF file and output images
     file_name = pdf_file  # Specify the name of the PDF file here
     pdf_path = f'pdfs/{file_name}'
+    # config_file = ''
     output_folder = f'pdf_images/{file_name}'
     os.makedirs(output_folder, exist_ok=True)
+
+    # Check if the provided pdf file is valid
+    if not os.path.exists(pdf_path):
+        print(f"Error: PDF file '{pdf_file}' does not exist.")
+        sys.exit(1)
+
+    # Determine the config file path
+    if args.config_file:
+        config_file = args.config_file
+        config_path = f'src/config/{config_file}'
+        if not os.path.exists(config_path):
+            print(f"Error: Transitions configuration file '{config_path}' does not exist.")
+            sys.exit(1)
+    else:
+        config_file = f'{file_name.split(".")[0]}.json'
+        config_path = f'src/config/{config_file}'
+        print(config_path)
+        if not os.path.exists(config_path):
+            print(f"Error: No transition configuration file provided and '{config_file}' does not exist.")
+            sys.exit(1)
 
     # Convert PDF to images and load them
     global image_paths
