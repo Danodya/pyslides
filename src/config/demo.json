@@ -12,7 +12,7 @@
   "Slide 3": {
     "transition": "swipe_right",
     "transition-duration": "1s",
-    "reversal-strategy": "none"
+    "reversal-strategy": "invert-transition"
   },
   "Slide 4": {
     "transition": "swipe_left",

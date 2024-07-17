@@ -123,11 +123,15 @@ def handle_keydown(event, images, window_size, slide_transitions):
         current_page = focused_page
         show_overview = False
     elif event.key == pygame.K_UP:
-        scrolling = True
+        transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+        transition_type_prev = transition_config_prev["transition"]
+        scrolling = transition_type_prev == constant.PARTIAL_SLIDE_TRANSITION
         scroll_direction = -1
         scroll_start_time = time.time()
     elif event.key == pygame.K_DOWN:
-        scrolling = True
+        transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+        transition_type_prev = transition_config_prev["transition"]
+        scrolling = transition_type_prev == constant.PARTIAL_SLIDE_TRANSITION
         scroll_direction = 1
         scroll_start_time = time.time()
 
@@ -151,9 +155,15 @@ def handle_mouse(event, images, window_size, slide_transitions):
                 current_page = (current_page + 1) % len(images)
                 apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
         elif event.button == 4:  # Scroll up
-            scroll_slide(images, -1)
+            transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+            transition_type_prev = transition_config_prev["transition"]
+            if transition_type_prev == constant.PARTIAL_SLIDE_TRANSITION:
+                scroll_slide(images, -1)
         elif event.button == 5:  # Scroll down
-            scroll_slide(images, 1)
+            transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+            transition_type_prev = transition_config_prev["transition"]
+            if transition_type_prev == constant.PARTIAL_SLIDE_TRANSITION:
+                scroll_slide(images, 1)
     elif event.type == pygame.MOUSEMOTION and show_overview:
         highlight_thumbnail(event.pos, images, window_size)
 
