@@ -99,7 +99,6 @@ def handle_keydown(event, images, window_size, slide_transitions):
         else:
             prev_page = current_page
             current_page = (current_page + 1) % len(images)
-            print('right ', current_page)
             apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
     elif event.key == pygame.K_LEFT:
         if show_overview:
@@ -107,7 +106,6 @@ def handle_keydown(event, images, window_size, slide_transitions):
         else:
             prev_page = current_page
             current_page = (current_page - 1) % len(images)
-            print('left ', current_page)
             transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
             reversal_strategy = transition_config_current["reversal-strategy"]
             if reversal_strategy != constant.NONE:
