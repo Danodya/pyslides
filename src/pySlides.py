@@ -29,6 +29,9 @@ prev_slide_position = 0  # previous slide y position for partial slide transitio
 scrolling = False  # Flag to indicate if scrolling is active
 scroll_direction = 0  # Direction of scrolling: -1 for up, 1 for down
 scroll_start_time = 0  # Time when scrolling started
+spotlight_mode = False  # Flag to indicate if spotlight mode is active
+spotlight_radius = 100  # Initial spotlight radius
+spotlight_position = (window_size[0] // 2, window_size[1] // 2)  # Initial spotlight position
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
@@ -87,11 +90,10 @@ def display_slide(images, current_page, window_size):
     image.set_alpha(250)
     image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
     screen.blit(image, image_rect.topleft)
-    pygame.display.flip()
 
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
+    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time, spotlight_mode, spotlight_radius
 
     if event.key == pygame.K_RIGHT:
         if show_overview:
@@ -134,6 +136,12 @@ def handle_keydown(event, images, window_size, slide_transitions):
         scrolling = transition_type_prev == constant.PARTIAL_SLIDE_TRANSITION
         scroll_direction = 1
         scroll_start_time = time.time()
+    elif event.key == pygame.K_s:
+        spotlight_mode = not spotlight_mode
+    elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
+        spotlight_radius = min(spotlight_radius + 10, window_size[1])
+    elif event.key == pygame.K_MINUS:
+        spotlight_radius = max(spotlight_radius - 10, 10)
 
 def handle_keyup(event):
     global scrolling, scroll_direction
@@ -144,7 +152,7 @@ def handle_keyup(event):
 
 # Function to handle mouse events
 def handle_mouse(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview
+    global current_page, focused_page, show_overview, spotlight_position
 
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
@@ -164,8 +172,11 @@ def handle_mouse(event, images, window_size, slide_transitions):
             transition_type_prev = transition_config_prev["transition"]
             if transition_type_prev == constant.PARTIAL_SLIDE_TRANSITION:
                 scroll_slide(images, 1)
-    elif event.type == pygame.MOUSEMOTION and show_overview:
-        highlight_thumbnail(event.pos, images, window_size)
+    elif event.type == pygame.MOUSEMOTION:
+        if show_overview:
+            highlight_thumbnail(event.pos, images, window_size)
+        if spotlight_mode:
+            spotlight_position = event.pos
 
 
 # Function to apply a slide transition
@@ -237,8 +248,16 @@ def scroll_slide(images, direction):
 
         prev_slide_position = y_pos_prev
 
+# Function to draw the spotlight
+def draw_spotlight():
+    spotlight_surface = pygame.Surface(window_size, pygame.SRCALPHA)
+    spotlight_surface.fill((0, 0, 0, 200))
+    pygame.draw.circle(spotlight_surface, (0, 0, 0, 0), spotlight_position, spotlight_radius)
+    screen.blit(spotlight_surface, (0, 0))
+
+
 def main():
-    global window_size, scrolling, scroll_direction
+    global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
@@ -311,8 +330,11 @@ def main():
             transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page - 1)
             transition_type_current = transition_config_current["transition"]
             transition_type_prev = transition_config_prev["transition"]
-            if transition_type_current != constant.PARTIAL_SLIDE_TRANSITION and transition_type_prev != constant.PARTIAL_SLIDE_TRANSITION :
+            if transition_type_current != constant.PARTIAL_SLIDE_TRANSITION and transition_type_prev != constant.PARTIAL_SLIDE_TRANSITION:
                 display_slide(images, current_page, window_size)
+
+        if spotlight_mode:
+            draw_spotlight()
 
         pygame.display.flip()
 
