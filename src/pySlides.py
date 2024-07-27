@@ -12,9 +12,6 @@ import time
 # Ensure the src directory is in the Python path
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
 
-# Initialize Pygame
-pygame.init()
-
 # Define the initial window size
 window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
 screen = pygame.display.set_mode(window_size)
@@ -294,6 +291,9 @@ def main():
         if not os.path.exists(config_path):
             print(f"Error: No transition configuration file provided and '{config_file}' does not exist.")
             sys.exit(1)
+
+    # Initialize Pygame
+    pygame.init()
 
     # Convert PDF to images and load them
     global image_paths
