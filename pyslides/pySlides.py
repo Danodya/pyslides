@@ -4,13 +4,13 @@ import sys
 import fitz  # PyMuPDF
 import pygame
 import os
-import src.constant as constant
-from src.transitions import SlideTransition
-from src.config.transitions_config_reader import TransitionsConfig
+import pyslides.constant as constant
+from pyslides.transitions import SlideTransition
+from pyslides.config.transitions_config_reader import TransitionsConfig
 import time
 
-# Ensure the src directory is in the Python path
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
+# Ensure the pyslides directory is in the Python path
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyslides'))
 
 # Define the initial window size
 window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
@@ -280,13 +280,13 @@ def main():
     # Determine the config file path
     if args.config_file:
         config_file = args.config_file
-        config_path = f'src/config/{config_file}'
+        config_path = f'pyslides/config/{config_file}'
         if not os.path.exists(config_path):
             print(f"Error: Transitions configuration file '{config_path}' does not exist.")
             sys.exit(1)
     else:
         config_file = f'{file_name.split(".")[0]}.json'
-        config_path = f'src/config/{config_file}'
+        config_path = f'pyslides/config/{config_file}'
         print(config_path)
         if not os.path.exists(config_path):
             print(f"Error: No transition configuration file provided and '{config_file}' does not exist.")

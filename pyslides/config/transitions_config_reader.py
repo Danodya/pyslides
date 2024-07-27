@@ -1,5 +1,5 @@
 import json
-import src.constant as constant
+import pyslides.constant as constant
 
 
 class TransitionsConfig:
@@ -8,7 +8,7 @@ class TransitionsConfig:
     @staticmethod
     def load_transitions_config(config_file_name):
         # Path to the transitions configuration file
-        config_path = f'/Users/danodyaweerasinghe/Documents/MSc/Dissertation/22-24_CE901-CE911-CF981-SU_weerasinghe_danodya/src/config/{config_file_name}'
+        config_path = f'/pyslides/config/{config_file_name}'
         with open(config_path, 'r') as config_file:
             config = json.load(config_file)
         
