@@ -1,6 +1,9 @@
 import pygame
 import time
 
+from pyslides.config.transitions_config_reader import TransitionsConfig
+
+
 class SlideTransition:
     preset_alpha = 250  # Default opacity value for images
 
@@ -189,7 +192,9 @@ class SlideTransition:
     @staticmethod
     def partial_sliding(prev_image, next_image, window_size, screen, duration=1, reverse=False):
         if reverse:
-            SlideTransition.fade_in(prev_image, next_image, window_size, screen, duration)
+            SlideTransition.choose_transition(prev_image, next_image, window_size, screen, TransitionsConfig.general_settings["transition"],
+                              float(TransitionsConfig.general_settings["transition-duration"].replace('s', '')), reverse=False)
+            # SlideTransition.fade_in(prev_image, next_image, window_size, screen, duration)
         else:
             # Record the start and end time for the transition
             start_time = time.time()

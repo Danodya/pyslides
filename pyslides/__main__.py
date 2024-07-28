@@ -1,4 +1,5 @@
 import argparse
+import pdb
 import sys
 
 import fitz  # PyMuPDF

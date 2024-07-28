@@ -1,4 +1,9 @@
 {
+  "General": {
+    "transition": "fade_in",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
   "Slide 1": {
     "transition": "pull",
     "transition-duration": "1s",
