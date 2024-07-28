@@ -1,5 +1,4 @@
 import argparse
-import pdb
 import sys
 
 import fitz  # PyMuPDF
@@ -30,6 +29,7 @@ scroll_start_time = 0  # Time when scrolling started
 spotlight_mode = False  # Flag to indicate if spotlight mode is active
 spotlight_radius = 100  # Initial spotlight radius
 spotlight_position = (window_size[0] // 2, window_size[1] // 2)  # Initial spotlight position
+end_of_presentation = False  # Flag to indicate the end of the presentation
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
@@ -91,21 +91,34 @@ def display_slide(images, current_page, window_size):
 
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time, spotlight_mode, spotlight_radius
+    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time, spotlight_mode, spotlight_radius, end_of_presentation
+
+    if end_of_presentation and event.key != pygame.K_LEFT:
+        return  # Ignore key presses if the presentation has ended, except for the left arrow key
 
     if event.key == pygame.K_RIGHT:
         if show_overview:
             focused_page = (focused_page + 1) % len(images)
         else:
             prev_page = current_page
-            current_page = (current_page + 1) % len(images)
-            apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
+            current_page = (current_page + 1)
+            if current_page >= len(images):
+                end_of_presentation = True
+            else:
+                apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
     elif event.key == pygame.K_LEFT:
         if show_overview:
             focused_page = (focused_page - 1) % len(images)
         else:
-            prev_page = current_page
-            current_page = (current_page - 1) % len(images)
+            if end_of_presentation:
+                current_page = len(images) - 1
+                prev_page = current_page
+                end_of_presentation = False
+            else:
+                prev_page = current_page
+                current_page = (current_page - 1)
+                if current_page < 0:
+                    current_page = 0
             transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
             reversal_strategy = transition_config_current["reversal-strategy"]
             if reversal_strategy != constant.NONE:
@@ -150,7 +163,10 @@ def handle_keyup(event):
 
 # Function to handle mouse events
 def handle_mouse(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview, spotlight_position
+    global current_page, focused_page, show_overview, spotlight_position, end_of_presentation
+
+    if end_of_presentation:
+        return  # Ignore mouse events if the presentation has ended
 
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
@@ -158,8 +174,11 @@ def handle_mouse(event, images, window_size, slide_transitions):
                 select_thumbnail(event.pos, images, window_size)
             else:
                 prev_page = current_page
-                current_page = (current_page + 1) % len(images)
-                apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
+                current_page = (current_page + 1)
+                if current_page >= len(images):
+                    end_of_presentation = True
+                else:
+                    apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
         elif event.button == 4:  # Scroll up
             transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
             transition_type_prev = transition_config_prev["transition"]
@@ -176,7 +195,6 @@ def handle_mouse(event, images, window_size, slide_transitions):
         if spotlight_mode:
             spotlight_position = event.pos
 
-
 # Function to apply a slide transition
 def apply_transition(prev_page, current_page, images, slide_transitions, reverse=False):
     global prev_slide_position
@@ -188,7 +206,6 @@ def apply_transition(prev_page, current_page, images, slide_transitions, reverse
         halfway_pos = window_size[1] / 4
         prev_start_pos = ((window_size[1] - images[prev_page].get_height()) // 2)
         prev_slide_position = prev_start_pos - halfway_pos
-
 
 # Function to select a thumbnail based on mouse click position
 def select_thumbnail(mouse_pos, images, window_size):
@@ -253,9 +270,8 @@ def draw_spotlight():
     pygame.draw.circle(spotlight_surface, (0, 0, 0, 0), spotlight_position, spotlight_radius)
     screen.blit(spotlight_surface, (0, 0))
 
-
 def main():
-    global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position
+    global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position, end_of_presentation
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
@@ -326,6 +342,8 @@ def main():
 
         if show_overview:
             display_overview(images, window_size, focused_page)
+        elif end_of_presentation:
+            screen.fill((0, 0, 0))
         else:
             transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
             transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page - 1)
