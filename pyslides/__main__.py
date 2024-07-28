@@ -17,6 +17,10 @@ window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
 screen = pygame.display.set_mode(window_size)
 pygame.display.set_caption(constant.DISPLAY_CAPTION)
 
+# Initialize Pygame's font module
+pygame.font.init()
+font = pygame.font.Font(None, 36)  # None uses the default font, 36 is the font size
+
 # Global state variables
 is_fullscreen = False
 show_overview = False
@@ -270,6 +274,13 @@ def draw_spotlight():
     pygame.draw.circle(spotlight_surface, (0, 0, 0, 0), spotlight_position, spotlight_radius)
     screen.blit(spotlight_surface, (0, 0))
 
+# Function to display end of presentation message
+def display_end_message():
+    screen.fill((0, 0, 0))
+    text = font.render("You have reached the end of the presentation", True, (255, 255, 255))
+    text_rect = text.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
+    screen.blit(text, text_rect)
+
 def main():
     global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position, end_of_presentation
 
@@ -343,7 +354,7 @@ def main():
         if show_overview:
             display_overview(images, window_size, focused_page)
         elif end_of_presentation:
-            screen.fill((0, 0, 0))
+            display_end_message()
         else:
             transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
             transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page - 1)
