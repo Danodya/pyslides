@@ -4,6 +4,7 @@ import sys
 import fitz  # PyMuPDF
 import pygame
 import os
+from pathlib import Path
 import pyslides.constant as constant
 from pyslides.transitions import SlideTransition
 from pyslides.config.transitions_config_reader import TransitionsConfig
@@ -294,29 +295,33 @@ def main():
     pdf_file = args.pdf_file
 
     # Define paths for the PDF file and output images
-    file_name = pdf_file  # Specify the name of the PDF file here
-    pdf_path = f'pdfs/{file_name}'
+    pdf_path = Path(pdf_file)  # relative to current directory
+    pdf_path_abs = pdf_path.resolve()  # converts to absolute path
+
     # config_file = ''
-    output_folder = f'pdf_images/{file_name}'
+    output_folder = f'pdf_images/{pdf_file}'
     os.makedirs(output_folder, exist_ok=True)
 
     # Check if the provided pdf file is valid
-    if not os.path.exists(pdf_path):
+    if not os.path.exists(pdf_path_abs):
         print(f"Error: PDF file '{pdf_file}' does not exist.")
         sys.exit(1)
 
     # Determine the config file path
     if args.config_file:
         config_file = args.config_file
-        config_path = f'pyslides/config/{config_file}'
-        if not os.path.exists(config_path):
-            print(f"Error: Transitions configuration file '{config_path}' does not exist.")
+
+        config_path = Path(config_file)  # relative to current directory
+        config_path_abs = config_path.resolve()  # converts to absolute path
+        if not os.path.exists(config_path_abs):
+            print(f"Error: Transitions configuration file '{config_path_abs}' does not exist.")
             sys.exit(1)
     else:
-        config_file = f'{file_name.split(".")[0]}.json'
-        config_path = f'pyslides/config/{config_file}'
-        print(config_path)
-        if not os.path.exists(config_path):
+        config_file = f'{pdf_file.split(".")[0]}.json'
+        config_path = Path(config_file)  # relative to current directory
+        config_path_abs = config_path.resolve()  # converts to absolute path
+        print(config_path_abs)
+        if not os.path.exists(config_path_abs):
             print(f"Error: No transition configuration file provided and '{config_file}' does not exist.")
             sys.exit(1)
 
@@ -325,7 +330,7 @@ def main():
 
     # Convert PDF to images and load them
     global image_paths
-    image_paths = convert_pdf_to_images(pdf_path, output_folder, window_size)
+    image_paths = convert_pdf_to_images(pdf_path_abs, output_folder, window_size)
     images = [scale_image_to_fit(pygame.image.load(img_path), window_size) for img_path in image_paths]
 
     # Load slide transitions configuration for the specified PDF
