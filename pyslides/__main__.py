@@ -35,6 +35,8 @@ spotlight_mode = False  # Flag to indicate if spotlight mode is active
 spotlight_radius = 100  # Initial spotlight radius
 spotlight_position = (window_size[0] // 2, window_size[1] // 2)  # Initial spotlight position
 end_of_presentation = False  # Flag to indicate the end of the presentation
+show_help = False  # Flag to indicate if help screen is active
+show_initial_help_popup = True  # Flag for initial help popup
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
@@ -96,10 +98,16 @@ def display_slide(images, current_page, window_size):
 
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time, spotlight_mode, spotlight_radius, end_of_presentation
+    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time, spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup
 
     if end_of_presentation and event.key != pygame.K_LEFT:
         return  # Ignore key presses if the presentation has ended, except for the left arrow key
+
+    if event.key == pygame.K_h:
+        show_help = not show_help
+        show_initial_help_popup = False
+    elif show_help:
+        return  # Ignore other key presses when the help screen is active
 
     if event.key == pygame.K_RIGHT:
         if show_overview:
@@ -282,8 +290,42 @@ def display_end_message():
     text_rect = text.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
     screen.blit(text, text_rect)
 
+# Function to display help screen
+def display_help():
+    screen.fill((75, 75, 75))
+    help_text = [
+        "Help Menu:",
+        "RIGHT ARROW: Next slide",
+        "LEFT ARROW: Previous slide",
+        "UP ARROW: Scroll up (for partial slides)",
+        "DOWN ARROW: Scroll down (for partial slides)",
+        "S: Toggle spotlight mode",
+        "+ / =: Increase spotlight radius",
+        "-: Decrease spotlight radius",
+        "F: Toggle fullscreen",
+        "TAB: Toggle overview mode",
+        "RETURN: Select slide in overview mode",
+        "H: Toggle help menu",
+    ]
+    y_offset = 50
+    for line in help_text:
+        text = font.render(line, True, (255, 255, 255))
+        screen.blit(text, (50, y_offset))
+        y_offset += 40
+
+# Function to display initial help popup
+def display_initial_help_popup():
+    popup_surface = pygame.Surface((window_size[0] * 0.8, 100), pygame.SRCALPHA)
+    popup_surface.fill((0, 0, 0, 200))
+    popup_rect = popup_surface.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
+    text = font.render("Press 'H' for help", True, (255, 255, 255))
+    text_rect = text.get_rect(center=popup_rect.center)
+    screen.blit(popup_surface, popup_rect)
+    screen.blit(text, text_rect)
+
 def main():
-    global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position, end_of_presentation
+    global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position, \
+        end_of_presentation, show_help, show_initial_help_popup
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
@@ -339,6 +381,7 @@ def main():
 
     running = True
     last_scroll_time = 0  # Track the last time we scrolled
+    initial_popup_start_time = time.time()  # Track the start time of the initial popup
 
     while running:
         current_time = time.time()
@@ -356,7 +399,9 @@ def main():
             scroll_slide(images, scroll_direction)
             last_scroll_time = current_time
 
-        if show_overview:
+        if show_help:
+            display_help()
+        elif show_overview:
             display_overview(images, window_size, focused_page)
         elif end_of_presentation:
             display_end_message()
@@ -370,6 +415,11 @@ def main():
 
         if spotlight_mode:
             draw_spotlight()
+
+        if show_initial_help_popup and current_time - initial_popup_start_time < 3:  # Show for 3 seconds
+            display_initial_help_popup()
+        elif show_initial_help_popup and current_time - initial_popup_start_time >= 3:
+            show_initial_help_popup = False
 
         pygame.display.flip()
 
