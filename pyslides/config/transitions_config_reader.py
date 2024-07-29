@@ -8,10 +8,8 @@ class TransitionsConfig:
     
     # Load the transitions configuration file
     @staticmethod
-    def load_transitions_config(config_file_name):
-        # Path to the transitions configuration file
-        config_path = f'pyslides/config/{config_file_name}'
-        with open(config_path, 'r') as config_file:
+    def load_transitions_config(config_path_abs):
+        with open(config_path_abs, 'r') as config_file:
             config = json.load(config_file)
 
         # Extract general settings

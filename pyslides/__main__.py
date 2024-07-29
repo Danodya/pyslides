@@ -377,7 +377,7 @@ def main():
 
     # Load slide transitions configuration for the specified PDF
     global slide_transitions
-    slide_transitions = TransitionsConfig.load_transitions_config(config_file)
+    slide_transitions = TransitionsConfig.load_transitions_config(config_path_abs)
 
     running = True
     last_scroll_time = 0  # Track the last time we scrolled
