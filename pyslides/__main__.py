@@ -32,6 +32,9 @@ scrolling = False  # Flag to indicate if scrolling is active
 scroll_direction = 0  # Direction of scrolling: -1 for up, 1 for down
 scroll_start_time = 0  # Time when scrolling started
 spotlight_mode = False  # Flag to indicate if spotlight mode is active
+highlight_mode = False  # Flag to indicate if highlight mode is active
+highlight_start = None  # Start position for the highlight rectangle
+highlight_rect = None  # Current highlight rectangle
 spotlight_radius = 100  # Initial spotlight radius
 spotlight_position = (window_size[0] // 2, window_size[1] // 2)  # Initial spotlight position
 end_of_presentation = False  # Flag to indicate the end of the presentation
@@ -98,7 +101,9 @@ def display_slide(images, current_page, window_size):
 
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time, spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup
+    global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
+    global spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup
+    global highlight_mode, highlight_start, highlight_rect
 
     if end_of_presentation and event.key != pygame.K_LEFT:
         return  # Ignore key presses if the presentation has ended, except for the left arrow key
@@ -162,10 +167,20 @@ def handle_keydown(event, images, window_size, slide_transitions):
         scroll_start_time = time.time()
     elif event.key == pygame.K_s:
         spotlight_mode = not spotlight_mode
+        if spotlight_mode:
+            highlight_mode = False  # Turn off highlight mode if spotlight mode is enabled
+    elif event.key == pygame.K_r:
+        highlight_mode = not highlight_mode
+        if highlight_mode:
+            spotlight_mode = False  # Turn off spotlight mode if highlight mode is enabled
+            highlight_start = None
+            highlight_rect = None
     elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
-        spotlight_radius = min(spotlight_radius + 10, window_size[1])
+        if spotlight_mode:
+            spotlight_radius = min(spotlight_radius + 10, window_size[1])
     elif event.key == pygame.K_MINUS:
-        spotlight_radius = max(spotlight_radius - 10, 10)
+        if spotlight_mode:
+            spotlight_radius = max(spotlight_radius - 10, 10)
 
 def handle_keyup(event):
     global scrolling, scroll_direction
@@ -177,6 +192,7 @@ def handle_keyup(event):
 # Function to handle mouse events
 def handle_mouse(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, spotlight_position, end_of_presentation
+    global highlight_start, highlight_rect
 
     if end_of_presentation:
         return  # Ignore mouse events if the presentation has ended
@@ -185,6 +201,9 @@ def handle_mouse(event, images, window_size, slide_transitions):
         if event.button == 1:
             if show_overview:
                 select_thumbnail(event.pos, images, window_size)
+            elif highlight_mode:
+                highlight_start = event.pos
+                highlight_rect = None  # Reset highlight rectangle
             else:
                 prev_page = current_page
                 current_page = (current_page + 1)
@@ -207,6 +226,16 @@ def handle_mouse(event, images, window_size, slide_transitions):
             highlight_thumbnail(event.pos, images, window_size)
         if spotlight_mode:
             spotlight_position = event.pos
+        if highlight_mode and highlight_start:
+            x1, y1 = highlight_start
+            x2, y2 = event.pos
+            highlight_rect = pygame.Rect(min(x1, x2), min(y1, y2), abs(x1 - x2), abs(y1 - y2))
+    elif event.type == pygame.MOUSEBUTTONUP:
+        if event.button == 1 and highlight_mode and highlight_start:
+            x1, y1 = highlight_start
+            x2, y2 = event.pos
+            highlight_rect = pygame.Rect(min(x1, x2), min(y1, y2), abs(x1 - x2), abs(y1 - y2))
+            highlight_start = None
 
 # Function to apply a slide transition
 def apply_transition(prev_page, current_page, images, slide_transitions, reverse=False):
@@ -283,6 +312,15 @@ def draw_spotlight():
     pygame.draw.circle(spotlight_surface, (0, 0, 0, 0), spotlight_position, spotlight_radius)
     screen.blit(spotlight_surface, (0, 0))
 
+# Function to draw the highlight rectangle
+def draw_highlight():
+    if highlight_rect:
+        overlay_surface = pygame.Surface(window_size, pygame.SRCALPHA)
+        overlay_surface.fill((0, 0, 0, 200))  # Dim the whole screen
+        # Cut out the highlight area by making it transparent
+        pygame.draw.rect(overlay_surface, (0, 0, 0, 0), highlight_rect)
+        screen.blit(overlay_surface, (0, 0))
+
 # Function to display end of presentation message
 def display_end_message():
     screen.fill((0, 0, 0))
@@ -302,6 +340,7 @@ def display_help():
         "S: Toggle spotlight mode",
         "+ / =: Increase spotlight radius",
         "-: Decrease spotlight radius",
+        "H: Toggle highlight mode",
         "F: Toggle fullscreen",
         "TAB: Toggle overview mode",
         "RETURN: Select slide in overview mode",
@@ -324,8 +363,8 @@ def display_initial_help_popup():
     screen.blit(text, text_rect)
 
 def main():
-    global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position, \
-        end_of_presentation, show_help, show_initial_help_popup
+    global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position
+    global end_of_presentation, show_help, show_initial_help_popup, highlight_mode, highlight_start, highlight_rect
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
@@ -392,7 +431,7 @@ def main():
                 handle_keydown(event, images, window_size, slide_transitions)
             elif event.type == pygame.KEYUP:
                 handle_keyup(event)
-            elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
+            elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP):
                 handle_mouse(event, images, window_size, slide_transitions)
 
         if scrolling and current_time - last_scroll_time > 0.1:  # Scroll every 0.1 seconds
@@ -415,6 +454,8 @@ def main():
 
         if spotlight_mode:
             draw_spotlight()
+        elif highlight_mode:
+            draw_highlight()
 
         if show_initial_help_popup and current_time - initial_popup_start_time < 3:  # Show for 3 seconds
             display_initial_help_popup()
