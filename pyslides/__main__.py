@@ -28,13 +28,15 @@ show_overview = False
 current_page = 0
 focused_page = 0
 prev_slide_position = 0  # previous slide y position for partial slide transition scrolling
+next_slide_position = 0  # next slide y position for partial slide transition scrolling
 scrolling = False  # Flag to indicate if scrolling is active
 scroll_direction = 0  # Direction of scrolling: -1 for up, 1 for down
 scroll_start_time = 0  # Time when scrolling started
 spotlight_mode = False  # Flag to indicate if spotlight mode is active
 highlight_mode = False  # Flag to indicate if highlight mode is active
 highlight_start = None  # Start position for the highlight rectangle
-highlight_rect = None  # Current highlight rectangle
+highlight_rects = {}  # Store highlight rectangles per slide
+current_highlights = []  # Current highlights being drawn
 spotlight_radius = 100  # Initial spotlight radius
 spotlight_position = (window_size[0] // 2, window_size[1] // 2)  # Initial spotlight position
 end_of_presentation = False  # Flag to indicate the end of the presentation
@@ -42,7 +44,7 @@ show_help = False  # Flag to indicate if help screen is active
 show_initial_help_popup = True  # Flag for initial help popup
 zoom_level = 1  # Initial zoom level (1 = no zoom)
 max_zoom_level = 4  # Maximum zoom level
-min_zoom_level = 1  # Minimum zoom level (1 = no zoom)
+min_zoom_level = 1  # Minimum zoom level
 zoom_pos = (0, 0)  # Position around which zoom is centered
 
 # Function to toggle full screen mode
@@ -95,16 +97,16 @@ def display_overview(images, window_size, highlighted_page):
             thumbnail.set_alpha(100)  # Fade out non-highlighted thumbnails
         screen.blit(thumbnail, (x, y))
 
-
-# Function to display the current slide, considering zoom mode
+# Function to display the current slide, considering zoom mode and highlights
 def display_slide(images, current_page, window_size):
-    global zoom_pos, zoom_level
+    global zoom_pos, zoom_level, highlight_rects
+
     screen.fill((0, 0, 0))
     image = images[current_page]
 
     if zoom_level > 1:
         zoomed_image = pygame.transform.scale(image, (
-        int(image.get_width() * zoom_level), int(image.get_height() * zoom_level)))
+            int(image.get_width() * zoom_level), int(image.get_height() * zoom_level)))
 
         # Calculate the portion of the image to display at the center
         # New zoomed image size
@@ -125,11 +127,16 @@ def display_slide(images, current_page, window_size):
         image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
         screen.blit(image, image_rect.topleft)
 
+    # # Display the highlight rectangles for the current slide
+    # if current_page in highlight_rects:
+    #     for rect in highlight_rects[current_page]:
+    #         pygame.draw.rect(screen, (255, 0, 0), rect, 2)
+
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
     global spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup
-    global highlight_mode, highlight_start, highlight_rect, zoom_level
+    global highlight_mode, highlight_start, highlight_rects, current_highlights
 
     if end_of_presentation and event.key != pygame.K_LEFT:
         return  # Ignore key presses if the presentation has ended, except for the left arrow key
@@ -151,6 +158,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
             else:
                 apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
             zoom_level = 1.0  # Reset zoom level on slide change
+            current_highlights.clear()
     elif event.key == pygame.K_LEFT:
         if show_overview:
             focused_page = (focused_page - 1) % len(images)
@@ -165,6 +173,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
                 if current_page < 0:
                     current_page = 0
             zoom_level = 1.0  # Reset zoom level on slide change
+            current_highlights.clear()
             transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
             reversal_strategy = transition_config_current["reversal-strategy"]
             if reversal_strategy != constant.NONE:
@@ -198,11 +207,11 @@ def handle_keydown(event, images, window_size, slide_transitions):
         if spotlight_mode:
             highlight_mode = False  # Turn off highlight mode if spotlight mode is enabled
     elif event.key == pygame.K_r:
-        highlight_mode = not highlight_mode
         if highlight_mode:
-            spotlight_mode = False  # Turn off spotlight mode if highlight mode is enabled
-            highlight_start = None
-            highlight_rect = None
+            current_highlights.clear()
+        spotlight_mode = False  # Turn off spotlight mode if highlight mode is enabled
+        highlight_mode = not highlight_mode
+        highlight_start = None
     elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
         if spotlight_mode:
             spotlight_radius = min(spotlight_radius + 10, window_size[1])
@@ -221,7 +230,7 @@ def handle_keyup(event):
 # Function to handle mouse events
 def handle_mouse(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, spotlight_position, end_of_presentation
-    global highlight_start, highlight_rect, zoom_pos, zoom_level
+    global highlight_start, highlight_rects, current_highlights, zoom_pos, zoom_level
 
     if end_of_presentation:
         return  # Ignore mouse events if the presentation has ended
@@ -232,11 +241,11 @@ def handle_mouse(event, images, window_size, slide_transitions):
                 select_thumbnail(event.pos, images, window_size)
             elif highlight_mode:
                 highlight_start = event.pos
-                highlight_rect = None  # Reset highlight rectangle
             else:
                 prev_page = current_page
                 current_page = (current_page + 1)
                 zoom_level = 1.0  # Reset zoom level on slide change
+                current_highlights.clear()
                 if current_page >= len(images):
                     end_of_presentation = True
                 else:
@@ -245,6 +254,7 @@ def handle_mouse(event, images, window_size, slide_transitions):
             if pygame.key.get_mods() & pygame.KMOD_CTRL:  # Check if Ctrl key is pressed
                 zoom_level = min(zoom_level * 1.25, max_zoom_level)
                 zoom_pos = event.pos
+                # display_slide(images, current_page, window_size)
             else:
                 transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
                 transition_type_prev = transition_config_prev["transition"]
@@ -254,6 +264,7 @@ def handle_mouse(event, images, window_size, slide_transitions):
             if pygame.key.get_mods() & pygame.KMOD_CTRL:  # Check if Ctrl key is pressed
                 zoom_level = max(zoom_level / 1.25, min_zoom_level)
                 zoom_pos = event.pos
+                # display_slide(images, current_page, window_size)
             else:
                 transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
                 transition_type_prev = transition_config_prev["transition"]
@@ -268,6 +279,7 @@ def handle_mouse(event, images, window_size, slide_transitions):
             x1, y1 = highlight_start
             x2, y2 = event.pos
             highlight_rect = pygame.Rect(min(x1, x2), min(y1, y2), abs(x1 - x2), abs(y1 - y2))
+            current_highlights.append(highlight_rect)
         if zoom_level > 1:
             zoom_pos = event.pos
     elif event.type == pygame.MOUSEBUTTONUP:
@@ -275,11 +287,12 @@ def handle_mouse(event, images, window_size, slide_transitions):
             x1, y1 = highlight_start
             x2, y2 = event.pos
             highlight_rect = pygame.Rect(min(x1, x2), min(y1, y2), abs(x1 - x2), abs(y1 - y2))
+            current_highlights.append(highlight_rect)
             highlight_start = None
 
 # Function to apply a slide transition
 def apply_transition(prev_page, current_page, images, slide_transitions, reverse=False):
-    global prev_slide_position
+    global prev_slide_position, next_slide_position
     transition_config = TransitionsConfig.get_transition_config(slide_transitions, current_page)
     transition_type = transition_config["transition"]
     duration = float(transition_config["duration"].replace('s', ''))
@@ -288,6 +301,7 @@ def apply_transition(prev_page, current_page, images, slide_transitions, reverse
         halfway_pos = window_size[1] / 4
         prev_start_pos = ((window_size[1] - images[prev_page].get_height()) // 2)
         prev_slide_position = prev_start_pos - halfway_pos
+        next_slide_position = prev_slide_position + images[prev_page].get_height()
 
 # Function to select a thumbnail based on mouse click position
 def select_thumbnail(mouse_pos, images, window_size):
@@ -326,7 +340,7 @@ def highlight_thumbnail(mouse_pos, images, window_size):
 
 # Function to scroll slides
 def scroll_slide(images, direction):
-    global current_page, window_size, screen, prev_slide_position
+    global current_page, window_size, screen, prev_slide_position, next_slide_position
     scroll_step = 10  # Pixels to move per scroll step
     image = images[current_page - 1]
     next_image = images[current_page]
@@ -344,21 +358,46 @@ def scroll_slide(images, direction):
         pygame.display.flip()
 
         prev_slide_position = y_pos_prev
+        next_slide_position = y_pos_next
 
-# Function to draw the spotlight
+# Function to draw the slides after partial sliding and after each scrolling
+def draw_partial_slide(images):
+    global window_size, prev_slide_position, next_slide_position
+    image = images[current_page - 1]
+    next_image = images[current_page]
+
+    screen.fill((0, 0, 0))
+    screen.blit(image, ((window_size[0] - image.get_width()) // 2, prev_slide_position))
+    screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, next_slide_position))
+
+# Function to draw a spotlight on the slide
 def draw_spotlight():
+    # Create a surface for the spotlight effect
     spotlight_surface = pygame.Surface(window_size, pygame.SRCALPHA)
-    spotlight_surface.fill((0, 0, 0, 200))
+
+    # Fill the surface with a semi-transparent black
+    spotlight_surface.fill((0, 0, 0, 150))  # Use alpha value to dim
+
+    # Cut out the spotlight area by making it fully transparent
     pygame.draw.circle(spotlight_surface, (0, 0, 0, 0), spotlight_position, spotlight_radius)
+
+    # Blit the spotlight effect onto the main screen
     screen.blit(spotlight_surface, (0, 0))
 
 # Function to draw the highlight rectangle
 def draw_highlight():
-    if highlight_rect:
+    global current_highlights
+
+    if current_highlights:
+        # Create an overlay surface with transparency to dim the rest of the slide
         overlay_surface = pygame.Surface(window_size, pygame.SRCALPHA)
-        overlay_surface.fill((0, 0, 0, 200))  # Dim the whole screen
-        # Cut out the highlight area by making it transparent
-        pygame.draw.rect(overlay_surface, (0, 0, 0, 0), highlight_rect)
+        overlay_surface.fill((0, 0, 0, 150))  # Semi-transparent black fill
+
+        for rect in current_highlights:
+            # Cut out the highlight area by making it fully transparent
+            pygame.draw.rect(overlay_surface, (0, 0, 0, 0), rect)
+
+        # Blit the overlay to the screen
         screen.blit(overlay_surface, (0, 0))
 
 # Function to display end of presentation message
@@ -378,9 +417,9 @@ def display_help():
         "UP ARROW: Scroll up (for partial slides)",
         "DOWN ARROW: Scroll down (for partial slides)",
         "S: Toggle spotlight mode",
+        "R: Toggle highlight mode",
         "+ / =: Increase spotlight radius",
         "-: Decrease spotlight radius",
-        "H: Toggle highlight mode",
         "F: Toggle fullscreen",
         "TAB: Toggle overview mode",
         "RETURN: Select slide in overview mode",
@@ -405,7 +444,8 @@ def display_initial_help_popup():
 
 def main():
     global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position
-    global end_of_presentation, show_help, show_initial_help_popup, highlight_mode, highlight_start, highlight_rect
+    global end_of_presentation, show_help, show_initial_help_popup, highlight_mode, highlight_start, highlight_rects
+    global current_highlights
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
@@ -462,6 +502,12 @@ def main():
     last_scroll_time = 0  # Track the last time we scrolled
     initial_popup_start_time = time.time()  # Track the start time of the initial popup
 
+    # Restrict which event types should be placed on the event queue
+    pygame.event.set_blocked(None)
+    pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT])
+
+    pygame.event.clear()  # clear the events queue
+
     while running:
         current_time = time.time()
         for event in pygame.event.get():
@@ -486,11 +532,11 @@ def main():
             display_end_message()
         else:
             transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
-            transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page - 1)
             transition_type_current = transition_config_current["transition"]
-            transition_type_prev = transition_config_prev["transition"]
-            if transition_type_current != constant.PARTIAL_SLIDE_TRANSITION and transition_type_prev != constant.PARTIAL_SLIDE_TRANSITION:
+            if transition_type_current != constant.PARTIAL_SLIDE_TRANSITION:
                 display_slide(images, current_page, window_size)
+            else:
+                draw_partial_slide(images)
 
         if spotlight_mode:
             draw_spotlight()

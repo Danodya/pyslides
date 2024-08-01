@@ -43,6 +43,11 @@
     "transition": "partial_sliding",
     "transition-duration": "1s",
     "reversal-strategy": "invert-transition"
+  },
+  "Slide 13": {
+    "transition": "swipe_left",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
   }
 }
   
