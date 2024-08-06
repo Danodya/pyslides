@@ -46,6 +46,7 @@ zoom_level = 1  # Initial zoom level (1 = no zoom)
 max_zoom_level = 4  # Maximum zoom level
 min_zoom_level = 1  # Minimum zoom level
 zoom_pos = (0, 0)  # Position around which zoom is centered
+black_screen_mode = False  # Flag to indicate the black screen
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
@@ -137,6 +138,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
     global spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup
     global highlight_mode, highlight_start, highlight_rects, current_highlights
+    global black_screen_mode
 
     if end_of_presentation and event.key != pygame.K_LEFT:
         return  # Ignore key presses if the presentation has ended, except for the left arrow key
@@ -148,6 +150,8 @@ def handle_keydown(event, images, window_size, slide_transitions):
         return  # Ignore other key presses when the help screen is active
 
     if event.key == pygame.K_RIGHT or event.key == pygame.K_PAGEDOWN:
+        if black_screen_mode:
+            black_screen_mode = not black_screen_mode
         if show_overview:
             focused_page = (focused_page + 1) % len(images)
         else:
@@ -160,6 +164,8 @@ def handle_keydown(event, images, window_size, slide_transitions):
             zoom_level = 1.0  # Reset zoom level on slide change
             current_highlights.clear()
     elif event.key == pygame.K_LEFT or event.key == pygame.K_PAGEUP:
+        if black_screen_mode:
+            black_screen_mode = not black_screen_mode
         if show_overview:
             focused_page = (focused_page - 1) % len(images)
         else:
@@ -218,6 +224,8 @@ def handle_keydown(event, images, window_size, slide_transitions):
     elif event.key == pygame.K_MINUS:
         if spotlight_mode:
             spotlight_radius = max(spotlight_radius - 10, 10)
+    elif event.key == pygame.K_PERIOD:
+        black_screen_mode = not black_screen_mode  # Toggle black screen mode
 
 # Function to handle keyup events
 def handle_keyup(event):
@@ -520,33 +528,36 @@ def main():
             elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP):
                 handle_mouse(event, images, window_size, slide_transitions)
 
-        if scrolling and current_time - last_scroll_time > 0.1:  # Scroll every 0.1 seconds
-            scroll_slide(images, scroll_direction)
-            last_scroll_time = current_time
-
-        if show_help:
-            display_help()
-        elif show_overview:
-            display_overview(images, window_size, focused_page)
-        elif end_of_presentation:
-            display_end_message()
+        if black_screen_mode:
+            screen.fill((0, 0, 0))  # Fill the screen with black if black screen mode is active
         else:
-            transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
-            transition_type_current = transition_config_current["transition"]
-            if transition_type_current != constant.PARTIAL_SLIDE_TRANSITION:
-                display_slide(images, current_page, window_size)
+            if scrolling and current_time - last_scroll_time > 0.1:  # Scroll every 0.1 seconds
+                scroll_slide(images, scroll_direction)
+                last_scroll_time = current_time
+
+            if show_help:
+                display_help()
+            elif show_overview:
+                display_overview(images, window_size, focused_page)
+            elif end_of_presentation:
+                display_end_message()
             else:
-                draw_partial_slide(images)
+                transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+                transition_type_current = transition_config_current["transition"]
+                if transition_type_current != constant.PARTIAL_SLIDE_TRANSITION:
+                    display_slide(images, current_page, window_size)
+                else:
+                    draw_partial_slide(images)
 
-        if spotlight_mode:
-            draw_spotlight()
-        elif highlight_mode:
-            draw_highlight()
+            if spotlight_mode:
+                draw_spotlight()
+            elif highlight_mode:
+                draw_highlight()
 
-        if show_initial_help_popup and current_time - initial_popup_start_time < 3:  # Show for 3 seconds
-            display_initial_help_popup()
-        elif show_initial_help_popup and current_time - initial_popup_start_time >= 3:
-            show_initial_help_popup = False
+            if show_initial_help_popup and current_time - initial_popup_start_time < 3:  # Show for 3 seconds
+                display_initial_help_popup()
+            elif show_initial_help_popup and current_time - initial_popup_start_time >= 3:
+                show_initial_help_popup = False
 
         pygame.display.flip()
 
