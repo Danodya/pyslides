@@ -147,7 +147,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
     elif show_help:
         return  # Ignore other key presses when the help screen is active
 
-    if event.key == pygame.K_RIGHT:
+    if event.key == pygame.K_RIGHT or event.key == pygame.K_PAGEDOWN:
         if show_overview:
             focused_page = (focused_page + 1) % len(images)
         else:
@@ -159,7 +159,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
                 apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
             zoom_level = 1.0  # Reset zoom level on slide change
             current_highlights.clear()
-    elif event.key == pygame.K_LEFT:
+    elif event.key == pygame.K_LEFT or event.key == pygame.K_PAGEUP:
         if show_overview:
             focused_page = (focused_page - 1) % len(images)
         else:
@@ -355,7 +355,7 @@ def scroll_slide(images, direction):
         screen.fill((0, 0, 0))
         screen.blit(image, ((window_size[0] - image.get_width()) // 2, y_pos_prev))
         screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, y_pos_next))
-        pygame.display.flip()
+        # pygame.display.flip()
 
         prev_slide_position = y_pos_prev
         next_slide_position = y_pos_next
