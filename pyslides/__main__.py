@@ -395,18 +395,17 @@ def draw_spotlight():
 # Function to draw the highlight rectangle
 def draw_highlight():
     global current_highlights
+    # Create an overlay surface with transparency to dim the rest of the slide
+    overlay_surface = pygame.Surface(window_size, pygame.SRCALPHA)
+    overlay_surface.fill((0, 0, 0, 150))  # Semi-transparent black fill
 
     if current_highlights:
-        # Create an overlay surface with transparency to dim the rest of the slide
-        overlay_surface = pygame.Surface(window_size, pygame.SRCALPHA)
-        overlay_surface.fill((0, 0, 0, 150))  # Semi-transparent black fill
-
         for rect in current_highlights:
             # Cut out the highlight area by making it fully transparent
             pygame.draw.rect(overlay_surface, (0, 0, 0, 0), rect)
 
-        # Blit the overlay to the screen
-        screen.blit(overlay_surface, (0, 0))
+    # Blit the overlay to the screen
+    screen.blit(overlay_surface, (0, 0))
 
 # Function to display end of presentation message
 def display_end_message():
