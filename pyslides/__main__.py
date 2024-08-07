@@ -1,6 +1,5 @@
 import argparse
 import sys
-
 import fitz  # PyMuPDF
 import pygame
 import os
@@ -21,6 +20,7 @@ pygame.display.set_caption(constant.DISPLAY_CAPTION)
 # Initialize Pygame's font module
 pygame.font.init()
 font = pygame.font.Font(None, 36)  # None uses the default font, 36 is the font size
+annotation_font = pygame.font.SysFont("chalkboard", 18)
 
 # Global state variables
 is_fullscreen = False
@@ -47,6 +47,15 @@ max_zoom_level = 4  # Maximum zoom level
 min_zoom_level = 1  # Minimum zoom level
 zoom_pos = (0, 0)  # Position around which zoom is centered
 black_screen_mode = False  # Flag to indicate the black screen
+
+# Global variables for text annotation
+is_drawing_box = False
+annotation_start = None
+annotation_rect = None
+is_entering_text = False
+current_text = ""
+text_annotations = {}  # Store list of (rect, text) per slide
+dragging = False  # Flag for dragging the annotation box
 
 # Function to toggle full screen mode
 def toggle_fullscreen():
@@ -128,20 +137,31 @@ def display_slide(images, current_page, window_size):
         image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
         screen.blit(image, image_rect.topleft)
 
-    # # Display the highlight rectangles for the current slide
-    # if current_page in highlight_rects:
-    #     for rect in highlight_rects[current_page]:
-    #         pygame.draw.rect(screen, (255, 0, 0), rect, 2)
-
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
     global spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup
-    global highlight_mode, highlight_start, highlight_rects, current_highlights
-    global black_screen_mode
+    global highlight_mode, highlight_start, highlight_rects, current_highlights, black_screen_mode
+    global is_entering_text, current_text, annotation_rect, text_annotations, is_drawing_box, annotation_start
 
     if end_of_presentation and event.key != pygame.K_LEFT:
         return  # Ignore key presses if the presentation has ended, except for the left arrow key
+
+    if is_entering_text:
+        if event.key == pygame.K_END:  # Stop entering text mode with 'END' key
+            if current_page not in text_annotations:
+                text_annotations[current_page] = []
+            text_annotations[current_page].append((annotation_rect, current_text))
+            current_text = ""
+            annotation_rect = None
+            is_entering_text = False
+            return
+        elif event.key == pygame.K_BACKSPACE:
+            current_text = current_text[:-1]
+        else:
+            current_text += event.unicode
+            adjust_annotation_rect()
+        return  # Exit to avoid processing other keys while entering text
 
     if event.key == pygame.K_h:
         show_help = not show_help
@@ -226,6 +246,26 @@ def handle_keydown(event, images, window_size, slide_transitions):
             spotlight_radius = max(spotlight_radius - 10, 10)
     elif event.key == pygame.K_PERIOD:
         black_screen_mode = not black_screen_mode  # Toggle black screen mode
+    elif event.key == pygame.K_t:
+        if is_entering_text:  # Stop entering text mode
+            if current_page not in text_annotations:
+                text_annotations[current_page] = []
+            text_annotations[current_page].append((annotation_rect, current_text))
+            current_text = ""
+            annotation_rect = None
+            is_entering_text = False
+        else:  # Start drawing a box
+            for rect, text in text_annotations.get(current_page, []):
+                if rect.collidepoint(pygame.mouse.get_pos()):
+                    annotation_rect = rect
+                    current_text = text
+                    text_annotations[current_page].remove((rect, text))
+                    is_entering_text = True
+                    break
+            else:
+                is_drawing_box = True
+                annotation_start = pygame.mouse.get_pos()  # Capture the starting position for the annotation box
+                current_text = ""  # Initialize an empty text string
 
 # Function to handle keyup events
 def handle_keyup(event):
@@ -239,30 +279,44 @@ def handle_keyup(event):
 def handle_mouse(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, spotlight_position, end_of_presentation
     global highlight_start, highlight_rects, current_highlights, zoom_pos, zoom_level
+    global is_drawing_box, annotation_start, annotation_rect, is_entering_text, dragging, current_text
 
     if end_of_presentation:
         return  # Ignore mouse events if the presentation has ended
 
     if event.type == pygame.MOUSEBUTTONDOWN:
-        if event.button == 1:
+        if event.button == 1:  # Left mouse button
+            if is_entering_text:
+                return  # Ignore clicks while entering text
             if show_overview:
                 select_thumbnail(event.pos, images, window_size)
             elif highlight_mode:
                 highlight_start = event.pos
+            elif is_drawing_box:
+                annotation_start = event.pos
+                is_drawing_box = True
+                annotation_rect = None
             else:
-                prev_page = current_page
-                current_page = (current_page + 1)
-                zoom_level = 1.0  # Reset zoom level on slide change
-                current_highlights.clear()
-                if current_page >= len(images):
-                    end_of_presentation = True
+                for rect, text in text_annotations.get(current_page, []):
+                    if rect.collidepoint(event.pos):
+                        dragging = True
+                        annotation_rect = rect
+                        current_text = text
+                        text_annotations[current_page].remove((rect, text))
+                        break
                 else:
-                    apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
+                    prev_page = current_page
+                    current_page = (current_page + 1)
+                    zoom_level = 1.0  # Reset zoom level on slide change
+                    current_highlights.clear()
+                    if current_page >= len(images):
+                        end_of_presentation = True
+                    else:
+                        apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
         elif event.button == 4:  # Scroll up (mouse wheel up)
             if pygame.key.get_mods() & pygame.KMOD_CTRL:  # Check if Ctrl key is pressed
                 zoom_level = min(zoom_level * 1.25, max_zoom_level)
                 zoom_pos = event.pos
-                # display_slide(images, current_page, window_size)
             else:
                 transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
                 transition_type_prev = transition_config_prev["transition"]
@@ -272,7 +326,6 @@ def handle_mouse(event, images, window_size, slide_transitions):
             if pygame.key.get_mods() & pygame.KMOD_CTRL:  # Check if Ctrl key is pressed
                 zoom_level = max(zoom_level / 1.25, min_zoom_level)
                 zoom_pos = event.pos
-                # display_slide(images, current_page, window_size)
             else:
                 transition_config_prev = TransitionsConfig.get_transition_config(slide_transitions, current_page)
                 transition_type_prev = transition_config_prev["transition"]
@@ -290,13 +343,21 @@ def handle_mouse(event, images, window_size, slide_transitions):
             current_highlights.append(highlight_rect)
         if zoom_level > 1:
             zoom_pos = event.pos
-    elif event.type == pygame.MOUSEBUTTONUP:
-        if event.button == 1 and highlight_mode and highlight_start:
-            x1, y1 = highlight_start
+        if is_drawing_box and annotation_start:
+            x1, y1 = annotation_start
             x2, y2 = event.pos
-            highlight_rect = pygame.Rect(min(x1, x2), min(y1, y2), abs(x1 - x2), abs(y1 - y2))
-            current_highlights.append(highlight_rect)
-            highlight_start = None
+            annotation_rect = pygame.Rect(x1, y1, abs(x1 - x2), abs(y1 - y2))  # Keep width constant
+        if dragging and annotation_rect:
+            annotation_rect.topleft = event.pos
+    elif event.type == pygame.MOUSEBUTTONUP:
+        if event.button == 1 and is_drawing_box:
+            is_drawing_box = False
+            is_entering_text = True  # Now enter text mode
+        if event.button == 1 and dragging:
+            dragging = False
+            text_annotations[current_page].append((annotation_rect, current_text))
+            annotation_rect = None
+            current_text = ""
 
 # Function to apply a slide transition
 def apply_transition(prev_page, current_page, images, slide_transitions, reverse=False):
@@ -363,7 +424,6 @@ def scroll_slide(images, direction):
         screen.fill((0, 0, 0))
         screen.blit(image, ((window_size[0] - image.get_width()) // 2, y_pos_prev))
         screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, y_pos_next))
-        # pygame.display.flip()
 
         prev_slide_position = y_pos_prev
         next_slide_position = y_pos_next
@@ -431,7 +491,9 @@ def display_help():
         "TAB: Toggle overview mode",
         "RETURN: Select slide in overview mode",
         "H: Toggle help menu",
-        "Ctrl + Mouse Wheel: Zoom in/out"
+        "Ctrl + Mouse Wheel: Zoom in/out",
+        "T: Add text annotation",
+        "END: Stop typing text annotation"
     ]
     y_offset = 50
     for line in help_text:
@@ -448,6 +510,75 @@ def display_initial_help_popup():
     text_rect = text.get_rect(center=popup_rect.center)
     screen.blit(popup_surface, popup_rect)
     screen.blit(text, text_rect)
+
+# Function to render text annotations
+def draw_text_annotations():
+    if current_page in text_annotations:
+        for rect, text in text_annotations[current_page]:
+            if rect:  # Draw only if rect is not None
+                render_text_in_box(text, rect)
+
+    # Render the text being entered
+    if is_entering_text and annotation_rect:
+        pygame.draw.rect(screen, (0, 0, 255), annotation_rect, 2)  # Draw the rectangle
+        render_text_in_box(current_text, annotation_rect)
+
+# Function to adjust the annotation rectangle size dynamically
+def adjust_annotation_rect():
+    global annotation_rect
+    if not annotation_rect:
+        return
+    words = current_text.split(' ')
+    space_width = annotation_font.size(' ')[0]
+    max_width = annotation_rect.width
+    x, y = annotation_rect.topleft
+    line_height = annotation_font.get_height()
+    current_line = []
+    max_height = 0
+
+    for word in words:
+        word_width, word_height = annotation_font.size(word)
+        if word_width > max_width:
+            continue  # Skip too long words
+        if sum(annotation_font.size(w)[0] for w in current_line) + word_width + space_width <= max_width:
+            current_line.append(word)
+        else:
+            max_height += line_height
+            current_line = [word]
+    if current_line:
+        max_height += line_height
+
+    annotation_rect.height = max_height
+
+# Function to render text inside a box
+def render_text_in_box(text, rect):
+    words = text.split(' ')
+    space_width = annotation_font.size(' ')[0]
+    max_width = rect.width
+    max_height = rect.height
+    x, y = rect.topleft
+    line_height = annotation_font.get_height()
+    lines = []
+    current_line = []
+
+    for word in words:
+        word_width, word_height = annotation_font.size(word)
+        if word_width > max_width:
+            continue  # Skip too long words
+        if sum(annotation_font.size(w)[0] for w in current_line) + word_width + space_width <= max_width:
+            current_line.append(word)
+        else:
+            lines.append(' '.join(current_line))
+            current_line = [word]
+    if current_line:
+        lines.append(' '.join(current_line))
+
+    for line in lines:
+        line_surface = annotation_font.render(line, True, (0, 0, 255))
+        screen.blit(line_surface, (x, y))
+        y += line_height
+        if y + line_height > rect.bottom:
+            break  # Stop drawing if text exceeds the box
 
 def main():
     global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position
@@ -552,6 +683,8 @@ def main():
                 draw_spotlight()
             elif highlight_mode:
                 draw_highlight()
+
+            draw_text_annotations()  # Draw the text annotations
 
             if show_initial_help_popup and current_time - initial_popup_start_time < 3:  # Show for 3 seconds
                 display_initial_help_popup()
