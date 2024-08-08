@@ -80,8 +80,10 @@ def convert_pdf_to_images(pdf_path, output_folder, window_size):
     high_res_factor = 2.0
     images = []
 
+    total_pages = len(pdf_document)
+
     # Iterate through each page of the PDF
-    for page_num in range(len(pdf_document)):
+    for page_num in range(total_pages):
         page = pdf_document.load_page(page_num)
         zoom_factor = min(screen_width / page.rect.width, screen_height / page.rect.height) * high_res_factor
         pix = page.get_pixmap(matrix=fitz.Matrix(zoom_factor, zoom_factor))
@@ -89,6 +91,10 @@ def convert_pdf_to_images(pdf_path, output_folder, window_size):
         pix.save(image_path)
         images.append(image_path)
 
+        # Update the progress in the terminal
+        print(f"\rLoading slides: {page_num + 1}/{total_pages} processed", end="")
+
+    print(f"\rLoading completed. {total_pages}/{total_pages} processed.               ")  # Clear the line after completion
     return images
 
 # Function to scale an image to fit within the window size while maintaining aspect ratio
