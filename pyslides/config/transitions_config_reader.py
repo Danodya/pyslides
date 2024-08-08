@@ -1,4 +1,6 @@
 import json
+import os
+
 import pyslides.constant as constant
 
 
@@ -9,8 +11,10 @@ class TransitionsConfig:
     # Load the transitions configuration file
     @staticmethod
     def load_transitions_config(config_path_abs):
-        with open(config_path_abs, 'r') as config_file:
-            config = json.load(config_file)
+        config = {}
+        if os.path.exists(config_path_abs):
+            with open(config_path_abs, 'r') as config_file:
+                config = json.load(config_file)
 
         # Extract general settings
         TransitionsConfig.general_settings = config.get("General", {
@@ -29,7 +33,6 @@ class TransitionsConfig:
                     "duration": value.get("transition-duration", TransitionsConfig.general_settings["transition-duration"]),
                     "reversal-strategy": value.get("reversal-strategy", TransitionsConfig.general_settings["reversal-strategy"])
                 }
-        # breakpoint()
         return slide_transitions
 
     # Function to get the transition type and duration for a given slide

@@ -704,10 +704,10 @@ def main():
         config_file = f'{pdf_file.split(".")[0]}.json'
         config_path = Path(config_file)  # relative to current directory
         config_path_abs = config_path.resolve()  # converts to absolute path
-        print(config_path_abs)
         if not os.path.exists(config_path_abs):
-            print(f"Error: No transition configuration file provided and '{config_file}' does not exist.")
-            sys.exit(1)
+            print(f"Error: No specific transition configuration file provided and '{config_file}' does not exist.")
+            print("Loading default transitions...")
+            # sys.exit(1)
 
     # Initialize Pygame
     pygame.init()
