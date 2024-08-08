@@ -3,6 +3,7 @@ import sys
 import fitz  # PyMuPDF
 import pygame
 import os
+import json
 from pathlib import Path
 import pyslides.constant as constant
 from pyslides.transitions import SlideTransition
@@ -235,9 +236,12 @@ def handle_keydown(event, images, window_size, slide_transitions):
         scroll_direction = 1
         scroll_start_time = time.time()
     elif event.key == pygame.K_s:
-        spotlight_mode = not spotlight_mode
-        if spotlight_mode:
-            highlight_mode = False  # Turn off highlight mode if spotlight mode is enabled
+        if pygame.key.get_mods() & pygame.KMOD_CTRL:
+            save_annotations_to_json()  # Save annotations when Ctrl + S is pressed
+        else:
+            spotlight_mode = not spotlight_mode
+            if spotlight_mode:
+                highlight_mode = False  # Turn off highlight mode if spotlight mode is enabled
     elif event.key == pygame.K_r:
         if highlight_mode:
             current_highlights.clear()
@@ -281,6 +285,8 @@ def handle_keydown(event, images, window_size, slide_transitions):
                     pen_annotations[current_page] = []
                 pen_annotations[current_page].append(pen_points)
                 pen_points = []
+    # elif event.key == pygame.K_s and pygame.key.get_mods() & pygame.KMOD_CTRL:
+    #     save_annotations_to_json()  # Save annotations when Ctrl + S is pressed
 
 # Function to handle keyup events
 def handle_keyup(event):
@@ -538,7 +544,8 @@ def display_help():
         "Ctrl + Mouse Wheel: Zoom in/out",
         "T: Add text annotation",
         "P: Toggle pen mode for freehand drawing",
-        "RETURN: Stop entering text"
+        "RETURN: Stop entering text",
+        "Ctrl + S: Save annotations"
     ]
     y_offset = 50
     for line in help_text:
@@ -625,10 +632,43 @@ def render_text_in_box(text, rect):
         if y + line_height > rect.bottom:
             break  # Stop drawing if text exceeds the box
 
+
+# Function to save annotations to a JSON file
+def save_annotations_to_json():
+    annotations = {
+        "text_annotations": {str(k): [{"rect": [r.left, r.top, r.width, r.height], "text": t} for r, t in v] for k, v in text_annotations.items()},
+        "pen_annotations": {str(k): [[(x, y) for x, y in points] for points in v] for k, v in pen_annotations.items()}
+    }
+    annotations_file = f"{Path(pdf_file).stem}_annotations.json"
+
+    # Create the file if it doesn't exist
+    if not os.path.exists(annotations_file):
+        with open(annotations_file, 'w') as f:
+            json.dump({}, f)  # Initialize an empty JSON object
+
+    # Save annotations to the file
+    with open(annotations_file, 'w') as f:
+        json.dump(annotations, f, indent=4)  # Use indent for better readability
+    print(f"Annotations saved to {annotations_file}")
+
+# Function to load annotations from a JSON file
+def load_annotations_from_json():
+    global text_annotations, pen_annotations
+    annotations_file = f"{Path(pdf_file).stem}_annotations.json"
+
+    if os.path.exists(annotations_file):
+        with open(annotations_file, 'r') as f:
+            annotations = json.load(f)
+            text_annotations = {int(k): [(pygame.Rect(a["rect"][0], a["rect"][1], a["rect"][2], a["rect"][3]), a["text"]) for a in v] for k, v in annotations.get("text_annotations", {}).items()}
+            pen_annotations = {int(k): [points for points in v] for k, v in annotations.get("pen_annotations", {}).items()}
+        print(f"Annotations loaded from {annotations_file}")
+    else:
+        print(f"No annotations file found at {annotations_file}")
+
 def main():
     global window_size, scrolling, scroll_direction, spotlight_mode, spotlight_radius, spotlight_position
     global end_of_presentation, show_help, show_initial_help_popup, highlight_mode, highlight_start, highlight_rects
-    global current_highlights
+    global current_highlights, pdf_file
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="PDF Viewer with Slide Transitions")
@@ -680,6 +720,9 @@ def main():
     # Load slide transitions configuration for the specified PDF
     global slide_transitions
     slide_transitions = TransitionsConfig.load_transitions_config(config_path_abs)
+
+    # Load annotations if available
+    load_annotations_from_json()
 
     running = True
     last_scroll_time = 0  # Track the last time we scrolled
