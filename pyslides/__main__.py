@@ -145,7 +145,7 @@ def display_slide(images, current_page, window_size):
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
-    global spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup
+    global spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup, zoom_level
     global highlight_mode, highlight_start, highlight_rects, current_highlights, black_screen_mode
     global is_entering_text, current_text, annotation_rect, text_annotations, is_drawing_box, annotation_start
     global is_drawing_pen, pen_points, pen_annotations
@@ -175,7 +175,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
     elif show_help:
         return  # Ignore other key presses when the help screen is active
 
-    if event.key == pygame.K_RIGHT or event.key == pygame.K_PAGEDOWN:
+    if event.key == pygame.K_RIGHT or event.key == pygame.K_PAGEDOWN:  # pagedown supports the clicker
         if black_screen_mode:
             black_screen_mode = not black_screen_mode
         if show_overview:
@@ -189,7 +189,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
                 apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
             zoom_level = 1.0  # Reset zoom level on slide change
             current_highlights.clear()
-    elif event.key == pygame.K_LEFT or event.key == pygame.K_PAGEUP:
+    elif event.key == pygame.K_LEFT or event.key == pygame.K_PAGEUP:  # pageup supports the clicker
         if black_screen_mode:
             black_screen_mode = not black_screen_mode
         if show_overview:
@@ -253,32 +253,34 @@ def handle_keydown(event, images, window_size, slide_transitions):
     elif event.key == pygame.K_PERIOD:
         black_screen_mode = not black_screen_mode  # Toggle black screen mode
     elif event.key == pygame.K_t:
-        if is_entering_text:  # Stop entering text mode
-            if current_page not in text_annotations:
-                text_annotations[current_page] = []
-            text_annotations[current_page].append((annotation_rect, current_text))
-            current_text = ""
-            annotation_rect = None
-            is_entering_text = False
-        else:  # Start drawing a box
-            for rect, text in text_annotations.get(current_page, []):
-                if rect.collidepoint(pygame.mouse.get_pos()):
-                    annotation_rect = rect
-                    current_text = text
-                    text_annotations[current_page].remove((rect, text))
-                    is_entering_text = True
-                    break
-            else:
-                is_drawing_box = True
-                annotation_start = pygame.mouse.get_pos()  # Capture the starting position for the annotation box
-                current_text = ""  # Initialize an empty text string
+        if not show_overview and zoom_level == 1:
+            if is_entering_text:  # Stop entering text mode
+                if current_page not in text_annotations:
+                    text_annotations[current_page] = []
+                text_annotations[current_page].append((annotation_rect, current_text))
+                current_text = ""
+                annotation_rect = None
+                is_entering_text = False
+            else:  # Start drawing a box
+                for rect, text in text_annotations.get(current_page, []):
+                    if rect.collidepoint(pygame.mouse.get_pos()):
+                        annotation_rect = rect
+                        current_text = text
+                        text_annotations[current_page].remove((rect, text))
+                        is_entering_text = True
+                        break
+                else:
+                        is_drawing_box = True
+                        annotation_start = pygame.mouse.get_pos()  # Capture the starting position for the annotation box
+                        current_text = ""  # Initialize an empty text string
     elif event.key == pygame.K_p:
-        is_drawing_pen = not is_drawing_pen  # Toggle pen drawing mode
-        if not is_drawing_pen and pen_points:
-            if current_page not in pen_annotations:
-                pen_annotations[current_page] = []
-            pen_annotations[current_page].append(pen_points)
-            pen_points = []
+        if not show_overview and zoom_level == 1:
+            is_drawing_pen = not is_drawing_pen  # Toggle pen drawing mode
+            if not is_drawing_pen and pen_points:
+                if current_page not in pen_annotations:
+                    pen_annotations[current_page] = []
+                pen_annotations[current_page].append(pen_points)
+                pen_points = []
 
 # Function to handle keyup events
 def handle_keyup(event):
@@ -331,6 +333,7 @@ def handle_mouse(event, images, window_size, slide_transitions):
                         apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
         elif event.button == 4:  # Scroll up (mouse wheel up)
             if pygame.key.get_mods() & pygame.KMOD_CTRL:  # Check if Ctrl key is pressed
+                is_drawing_pen = False
                 zoom_level = min(zoom_level * 1.25, max_zoom_level)
                 zoom_pos = event.pos
             else:
@@ -340,6 +343,7 @@ def handle_mouse(event, images, window_size, slide_transitions):
                     scroll_slide(images, -1)
         elif event.button == 5:  # Scroll down (mouse wheel down)
             if pygame.key.get_mods() & pygame.KMOD_CTRL:  # Check if Ctrl key is pressed
+                is_drawing_pen = False
                 zoom_level = max(zoom_level / 1.25, min_zoom_level)
                 zoom_pos = event.pos
             else:
@@ -725,8 +729,9 @@ def main():
             elif highlight_mode:
                 draw_highlight()
 
-            draw_text_annotations()  # Draw the text annotations
-            draw_pen_annotations()  # Draw the pen annotations
+            if not show_overview and zoom_level == 1:
+                draw_text_annotations()  # Draw the text annotations
+                draw_pen_annotations()  # Draw the pen annotations
 
             if show_initial_help_popup and current_time - initial_popup_start_time < 3:  # Show for 3 seconds
                 display_initial_help_popup()
