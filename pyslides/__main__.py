@@ -263,6 +263,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
     elif event.key == pygame.K_PERIOD:
         black_screen_mode = not black_screen_mode  # Toggle black screen mode
     elif event.key == pygame.K_t:
+        is_drawing_pen = False  # make pen annotations false when text annotations true
         if not show_overview and zoom_level == 1:
             if is_entering_text:  # Stop entering text mode
                 if current_page not in text_annotations:
@@ -291,8 +292,6 @@ def handle_keydown(event, images, window_size, slide_transitions):
                     pen_annotations[current_page] = []
                 pen_annotations[current_page].append(pen_points)
                 pen_points = []
-    # elif event.key == pygame.K_s and pygame.key.get_mods() & pygame.KMOD_CTRL:
-    #     save_annotations_to_json()  # Save annotations when Ctrl + S is pressed
 
 # Function to handle keyup events
 def handle_keyup(event):
