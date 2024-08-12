@@ -14,7 +14,8 @@ import time
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyslides'))
 
 # Define the initial window size
-window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
+original_window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
+window_size = original_window_size
 screen = pygame.display.set_mode(window_size)
 pygame.display.set_caption(constant.DISPLAY_CAPTION)
 
@@ -62,16 +63,71 @@ dragging = False  # Flag for dragging the annotation box
 is_drawing_pen = False
 pen_points = []
 pen_annotations = {}  # Store list of pen points per slide
+original_image_size = []
 
 # Function to toggle full screen mode
-def toggle_fullscreen():
-    global screen, window_size, is_fullscreen
+def toggle_fullscreen(images, prev_window_size):
+    global screen, window_size, is_fullscreen, original_image_size
     is_fullscreen = not is_fullscreen
     if is_fullscreen:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     else:
-        screen = pygame.display.set_mode((constant.SCREEN_WIDTH, constant.SCREEN_HIGHT))
-    window_size = screen.get_size()
+        screen = pygame.display.set_mode(original_window_size)
+
+    new_window_size = screen.get_size()
+
+    # Update the images to fit the new window size and track the new image size
+    images[:] = [scale_image_to_fit(pygame.image.load(img_path), new_window_size) for img_path in image_paths]
+    new_image_size = images[0].get_size()
+
+    # Rescale annotations to match the new image size
+    rescale_annotations(new_image_size, original_image_size, new_window_size, prev_window_size)
+    window_size = new_window_size
+    original_image_size = new_image_size  # Update the original image size to the new one
+
+# Function to rescale the annotations
+def rescale_annotations(new_size, original_size, new_window_size, original_window_size):
+    if original_size:
+
+        width_scale = new_size[0] / original_size[0]
+        height_scale = new_size[1] / original_size[1]
+
+        # Adjust text annotations
+        for page, annotations in text_annotations.items():
+            for i, (rect, text) in enumerate(annotations):
+                if is_fullscreen:
+                    x_adjust = ((new_window_size[0] - new_size[0]) / 2)
+                    y_adjust = ((original_window_size[1] - original_image_size[1]) / 2)
+                    new_rect = pygame.Rect(
+                        int(round(x_adjust + rect.left * width_scale)),
+                        int(round((rect.top - y_adjust) * height_scale)),
+                        int(round(rect.width * width_scale)),
+                        int(round(rect.height * height_scale))
+                    )
+                else:
+                    x_adjust = ((original_window_size[0] - original_size[0]) / 2)
+                    y_adjust = ((new_window_size[1] - new_size[1]) / 2)
+                    new_rect = pygame.Rect(
+                        int(round((rect.left - x_adjust) * width_scale)),
+                        int(round((rect.top * height_scale) + y_adjust)),
+                        int(round(rect.width * width_scale)),
+                        int(round(rect.height * height_scale))
+                    )
+
+                text_annotations[page][i] = (new_rect, text)
+
+        # Adjust pen annotations
+        for page, pen_strokes in pen_annotations.items():
+            for stroke in pen_strokes:
+                for i, (x, y) in enumerate(stroke):
+                    if is_fullscreen:
+                        x_adjust = ((new_window_size[0] - new_size[0]) / 2)
+                        y_adjust = ((original_window_size[1] - original_image_size[1]) / 2)
+                        stroke[i] = (int(round(x_adjust + x * width_scale)), int(round((y - y_adjust) * height_scale)))
+                    else:
+                        x_adjust = ((original_window_size[0] - original_size[0]) / 2)
+                        y_adjust = ((new_window_size[1] - new_size[1]) / 2)
+                        stroke[i] = (int(round((x - x_adjust) * width_scale)), int(round((y * height_scale) + y_adjust)))
 
 # Function to convert PDF pages to images
 def convert_pdf_to_images(pdf_path, output_folder, window_size):
@@ -149,13 +205,17 @@ def display_slide(images, current_page, window_size):
         image_rect = image.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
         screen.blit(image, image_rect.topleft)
 
+        # Draw annotations relative to the current image size
+        draw_text_annotations()
+        draw_pen_annotations()
+
 # Function to handle keydown events
 def handle_keydown(event, images, window_size, slide_transitions):
     global current_page, focused_page, show_overview, scrolling, scroll_direction, scroll_start_time
     global spotlight_mode, spotlight_radius, end_of_presentation, show_help, show_initial_help_popup, zoom_level
     global highlight_mode, highlight_start, highlight_rects, current_highlights, black_screen_mode
     global is_entering_text, current_text, annotation_rect, text_annotations, is_drawing_box, annotation_start
-    global is_drawing_pen, pen_points, pen_annotations
+    global is_drawing_pen, pen_points, pen_annotations, original_image_size
 
     if end_of_presentation and event.key != pygame.K_LEFT:
         return  # Ignore key presses if the presentation has ended, except for the left arrow key
@@ -179,6 +239,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
     if event.key == pygame.K_h:
         show_help = not show_help
         show_initial_help_popup = False
+        is_drawing_pen = False
     elif show_help:
         return  # Ignore other key presses when the help screen is active
 
@@ -221,9 +282,9 @@ def handle_keydown(event, images, window_size, slide_transitions):
             else:
                 display_slide(images, current_page, window_size)
     elif event.key == pygame.K_f:
-        toggle_fullscreen()
-        window_size = screen.get_size()
-        images[:] = [scale_image_to_fit(pygame.image.load(img_path), window_size) for img_path in image_paths]
+        original_image_size = images[current_page].get_size()
+        prev_window_size = screen.get_size()
+        toggle_fullscreen(images, prev_window_size)
     elif event.key == pygame.K_TAB:
         show_overview = not show_overview
     elif event.key == pygame.K_RETURN and show_overview:
@@ -281,9 +342,9 @@ def handle_keydown(event, images, window_size, slide_transitions):
                         is_entering_text = True
                         break
                 else:
-                        is_drawing_box = True
-                        annotation_start = pygame.mouse.get_pos()  # Capture the starting position for the annotation box
-                        current_text = ""  # Initialize an empty text string
+                    is_drawing_box = True
+                    annotation_start = pygame.mouse.get_pos()  # Capture the starting position for the annotation box
+                    current_text = ""  # Initialize an empty text string
     elif event.key == pygame.K_p:
         if not show_overview and zoom_level == 1:
             is_drawing_pen = not is_drawing_pen  # Toggle pen drawing mode
@@ -409,7 +470,8 @@ def apply_transition(prev_page, current_page, images, slide_transitions, reverse
     transition_config = TransitionsConfig.get_transition_config(slide_transitions, current_page)
     transition_type = transition_config["transition"]
     duration = float(transition_config["duration"].replace('s', ''))
-    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type, duration, reverse)
+    SlideTransition.choose_transition(images[prev_page], images[current_page], window_size, screen, transition_type,
+                                      duration, reverse)
     if transition_type == constant.PARTIAL_SLIDE_TRANSITION:
         halfway_pos = window_size[1] / 4
         prev_start_pos = ((window_size[1] - images[prev_page].get_height()) // 2)
@@ -637,11 +699,11 @@ def render_text_in_box(text, rect):
         if y + line_height > rect.bottom:
             break  # Stop drawing if text exceeds the box
 
-
 # Function to save annotations to a JSON file
 def save_annotations_to_json():
     annotations = {
-        "text_annotations": {str(k): [{"rect": [r.left, r.top, r.width, r.height], "text": t} for r, t in v] for k, v in text_annotations.items()},
+        "text_annotations": {str(k): [{"rect": [r.left, r.top, r.width, r.height], "text": t} for r, t in v] for k, v in
+                             text_annotations.items()},
         "pen_annotations": {str(k): [[(x, y) for x, y in points] for points in v] for k, v in pen_annotations.items()}
     }
     annotations_file = f"{Path(pdf_file).stem}_annotations.json"
@@ -664,8 +726,11 @@ def load_annotations_from_json():
     if os.path.exists(annotations_file):
         with open(annotations_file, 'r') as f:
             annotations = json.load(f)
-            text_annotations = {int(k): [(pygame.Rect(a["rect"][0], a["rect"][1], a["rect"][2], a["rect"][3]), a["text"]) for a in v] for k, v in annotations.get("text_annotations", {}).items()}
-            pen_annotations = {int(k): [points for points in v] for k, v in annotations.get("pen_annotations", {}).items()}
+            text_annotations = {
+                int(k): [(pygame.Rect(a["rect"][0], a["rect"][1], a["rect"][2], a["rect"][3]), a["text"]) for a in v]
+                for k, v in annotations.get("text_annotations", {}).items()}
+            pen_annotations = {int(k): [points for points in v] for k, v in
+                               annotations.get("pen_annotations", {}).items()}
         print(f"Annotations loaded from {annotations_file}")
     else:
         print(f"No annotations file found at {annotations_file}")
@@ -735,7 +800,8 @@ def main():
 
     # Restrict which event types should be placed on the event queue
     pygame.event.set_blocked(None)
-    pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT])
+    pygame.event.set_allowed(
+        [pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT])
 
     pygame.event.clear()  # clear the events queue
 
@@ -777,7 +843,7 @@ def main():
             elif highlight_mode:
                 draw_highlight()
 
-            if not show_overview and zoom_level == 1:
+            if not show_overview and zoom_level == 1 and not show_help:
                 draw_text_annotations()  # Draw the text annotations
                 draw_pen_annotations()  # Draw the pen annotations
 
