@@ -86,7 +86,7 @@ def toggle_fullscreen(images, prev_window_size):
     original_image_size = new_image_size  # Update the original image size to the new one
 
     # Recalculate slide positions if partial transition is active
-    if scrolling or slide_transitions[current_page]["transition"] == constant.PARTIAL_SLIDE_TRANSITION:
+    if current_page != 0 and (scrolling or slide_transitions[current_page]["transition"] == constant.PARTIAL_SLIDE_TRANSITION):
         halfway_pos = window_size[1] / 4
         prev_start_pos = ((window_size[1] - images[current_page - 1].get_height()) // 2)
         prev_slide_position = prev_start_pos - halfway_pos
