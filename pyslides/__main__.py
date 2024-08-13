@@ -1,4 +1,5 @@
 import argparse
+import copy
 import sys
 import fitz  # PyMuPDF
 import pygame
@@ -16,6 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyslid
 # Define the initial window size
 original_window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
 window_size = original_window_size
+fullscreen_window_size = original_window_size  # initialized to original window size
 screen = pygame.display.set_mode(window_size)
 pygame.display.set_caption(constant.DISPLAY_CAPTION)
 
@@ -67,9 +69,13 @@ original_image_size = []
 
 def toggle_fullscreen(images, prev_window_size):
     global screen, window_size, is_fullscreen, original_image_size, prev_slide_position, next_slide_position
+    global fullscreen_window_size, text_annotations, pen_annotations
+
     is_fullscreen = not is_fullscreen
+    print('text anno in fs begin ', text_annotations)
     if is_fullscreen:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        fullscreen_window_size = screen.get_size()
     else:
         screen = pygame.display.set_mode(original_window_size)
 
@@ -80,7 +86,7 @@ def toggle_fullscreen(images, prev_window_size):
     new_image_size = images[0].get_size()
 
     # Rescale annotations to match the new image size
-    rescale_annotations(new_image_size, original_image_size, new_window_size, prev_window_size)
+    text_annotations, pen_annotations = rescale_annotations(new_image_size, original_image_size, new_window_size, prev_window_size, is_fullscreen)
 
     window_size = new_window_size
     original_image_size = new_image_size  # Update the original image size to the new one
@@ -93,14 +99,16 @@ def toggle_fullscreen(images, prev_window_size):
         next_slide_position = prev_slide_position + images[current_page - 1].get_height()
 
 # Function to rescale the annotations
-def rescale_annotations(new_size, original_size, new_window_size, original_window_size):
+def rescale_annotations(new_size, original_size, new_window_size, original_window_size, is_fullscreen = False):
+    global text_annotations, pen_annotations
+    rescaled_text_annotations, rescaled_pen_annotations = copy.deepcopy(text_annotations), copy.deepcopy(pen_annotations)
     if original_size:
 
         width_scale = new_size[0] / original_size[0]
         height_scale = new_size[1] / original_size[1]
 
         # Adjust text annotations
-        for page, annotations in text_annotations.items():
+        for page, annotations in rescaled_text_annotations.items():
             for i, (rect, text) in enumerate(annotations):
                 if is_fullscreen:
                     x_adjust = ((new_window_size[0] - new_size[0]) / 2)
@@ -121,10 +129,10 @@ def rescale_annotations(new_size, original_size, new_window_size, original_windo
                         int(round(rect.height * height_scale))
                     )
 
-                text_annotations[page][i] = (new_rect, text)
+                rescaled_text_annotations[page][i] = (new_rect, text)
 
         # Adjust pen annotations
-        for page, pen_strokes in pen_annotations.items():
+        for page, pen_strokes in rescaled_pen_annotations.items():
             for stroke in pen_strokes:
                 for i, (x, y) in enumerate(stroke):
                     if is_fullscreen:
@@ -135,6 +143,7 @@ def rescale_annotations(new_size, original_size, new_window_size, original_windo
                         x_adjust = ((original_window_size[0] - original_size[0]) / 2)
                         y_adjust = ((new_window_size[1] - new_size[1]) / 2)
                         stroke[i] = (int(round((x - x_adjust) * width_scale)), int(round((y * height_scale) + y_adjust)))
+    return rescaled_text_annotations, rescaled_pen_annotations
 
 # Function to convert PDF pages to images
 def convert_pdf_to_images(pdf_path, output_folder, window_size):
@@ -311,7 +320,7 @@ def handle_keydown(event, images, window_size, slide_transitions):
         scroll_start_time = time.time()
     elif event.key == pygame.K_s:
         if pygame.key.get_mods() & pygame.KMOD_CTRL:
-            save_annotations_to_json()  # Save annotations when Ctrl + S is pressed
+            save_annotations_to_json(images[current_page])  # Save annotations when Ctrl + S is pressed
         else:
             spotlight_mode = not spotlight_mode
             if spotlight_mode:
@@ -707,11 +716,18 @@ def render_text_in_box(text, rect):
             break  # Stop drawing if text exceeds the box
 
 # Function to save annotations to a JSON file
-def save_annotations_to_json():
+def save_annotations_to_json(image):
+    global fullscreen_window_size, is_fullscreen
+    rescaled_text_annotations, rescaled_pen_annotations = copy.deepcopy(text_annotations), copy.deepcopy(pen_annotations)
+    if is_fullscreen:
+        fs_image_size = scale_image_to_fit(image, fullscreen_window_size)
+        org_image_size = scale_image_to_fit(image, original_window_size)
+        rescaled_text_annotations, rescaled_pen_annotations = rescale_annotations(
+            org_image_size.get_size(), fs_image_size.get_size(), original_window_size, fullscreen_window_size)
     annotations = {
         "text_annotations": {str(k): [{"rect": [r.left, r.top, r.width, r.height], "text": t} for r, t in v] for k, v in
-                             text_annotations.items()},
-        "pen_annotations": {str(k): [[(x, y) for x, y in points] for points in v] for k, v in pen_annotations.items()}
+                             rescaled_text_annotations.items()},
+        "pen_annotations": {str(k): [[(x, y) for x, y in points] for points in v] for k, v in rescaled_pen_annotations.items()}
     }
     annotations_file = f"{Path(pdf_file).stem}_annotations.json"
 
