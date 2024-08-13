@@ -73,7 +73,6 @@ def toggle_fullscreen(images, prev_window_size):
     global fullscreen_window_size, text_annotations, pen_annotations
 
     is_fullscreen = not is_fullscreen
-    print('text anno in fs begin ', text_annotations)
     if is_fullscreen:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         fullscreen_window_size = screen.get_size()
