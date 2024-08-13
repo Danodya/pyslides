@@ -65,9 +65,8 @@ pen_points = []
 pen_annotations = {}  # Store list of pen points per slide
 original_image_size = []
 
-# Function to toggle full screen mode
 def toggle_fullscreen(images, prev_window_size):
-    global screen, window_size, is_fullscreen, original_image_size
+    global screen, window_size, is_fullscreen, original_image_size, prev_slide_position, next_slide_position
     is_fullscreen = not is_fullscreen
     if is_fullscreen:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -82,8 +81,16 @@ def toggle_fullscreen(images, prev_window_size):
 
     # Rescale annotations to match the new image size
     rescale_annotations(new_image_size, original_image_size, new_window_size, prev_window_size)
+
     window_size = new_window_size
     original_image_size = new_image_size  # Update the original image size to the new one
+
+    # Recalculate slide positions if partial transition is active
+    if scrolling or slide_transitions[current_page]["transition"] == constant.PARTIAL_SLIDE_TRANSITION:
+        halfway_pos = window_size[1] / 4
+        prev_start_pos = ((window_size[1] - images[current_page - 1].get_height()) // 2)
+        prev_slide_position = prev_start_pos - halfway_pos
+        next_slide_position = prev_slide_position + images[current_page - 1].get_height()
 
 # Function to rescale the annotations
 def rescale_annotations(new_size, original_size, new_window_size, original_window_size):
