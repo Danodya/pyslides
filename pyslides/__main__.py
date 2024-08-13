@@ -24,7 +24,8 @@ pygame.display.set_caption(constant.DISPLAY_CAPTION)
 # Initialize Pygame's font module
 pygame.font.init()
 font = pygame.font.Font(None, 36)  # None uses the default font, 36 is the font size
-annotation_font = pygame.font.SysFont("chalkboard", 18)
+annotation_font = pygame.font.SysFont("timesnewroman", 18)
+# annotation_font = pygame.font.SysFont("chalkboard", 18)
 
 # Global state variables
 is_fullscreen = False
