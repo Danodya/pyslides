@@ -1,0 +1,53 @@
+{
+  "General": {
+    "transition": "fade_in",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 1": {
+    "transition": "pull",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 2": {
+    "transition": "fade_out_slide_in",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 3": {
+    "transition": "swipe_right",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 4": {
+    "transition": "swipe_left",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 5": {
+    "transition": "fade_in",
+    "transition-duration": "0.25s",
+    "reversal-strategy": "invert-transition"
+  },
+ "Slide 6": {
+    "transition": "partial_sliding",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 7": {
+    "transition": "partial_sliding",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 8": {
+    "transition": "partial_sliding",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  },
+  "Slide 14": {
+    "transition": "swipe_left",
+    "transition-duration": "1s",
+    "reversal-strategy": "invert-transition"
+  }
+}
+  
