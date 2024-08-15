@@ -39,7 +39,7 @@ pip install pygame PyMuPDF
 To start the PDF Viewer, run the following command:
 
 ```bash
-python viewer.py your_pdf_file.pdf --config_file your_config.json
+python -m pyslides your_pdf_file.pdf --config_file=your_config.json
 ```
 ### Key Features
 
@@ -50,6 +50,8 @@ python viewer.py your_pdf_file.pdf --config_file your_config.json
 - **Annotations**: You can add text and pen annotations to your slides, which are saved and can be reloaded with the presentation.
 
 - **Spotlight and Highlight Modes**: These modes allow you to emphasize parts of your slide during the presentation.
+
+- **Zoom Mode**: Zoom mode allows you to specifically show the part of the slide by zooming the location.
 
 - **Fullscreen and Windowed Modes**: Easily toggle between fullscreen and windowed modes with proper scaling of annotations.
 
@@ -80,6 +82,10 @@ When in fullscreen mode, annotations are rescaled to fit the original windowed s
 ### Spotlight and Highlight Modes
 
 Use the spotlight and highlight features to emphasize areas of your slide. Adjust the spotlight size with `+` and `-` keys.
+
+### Zoom mode
+
+Use the zoom feature to specifically display an area of the slide to the audience. use `ctrl` + `mouse wheel` for zoom in and zoom out.
 
 ## Custom Transitions
 
