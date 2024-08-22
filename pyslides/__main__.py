@@ -776,7 +776,8 @@ def main():
     pdf_path = Path(pdf_file)  # relative to current directory
     pdf_path_abs = pdf_path.resolve()  # converts to absolute path
 
-    output_folder = f'pdf_images/{pdf_file}'
+    output_folder_name = f'{pdf_file.split(".")[0]}'
+    output_folder = f'pdf_images/{output_folder_name}'
     os.makedirs(output_folder, exist_ok=True)
 
     # Check if the provided pdf file is valid
