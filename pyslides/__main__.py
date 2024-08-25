@@ -92,7 +92,8 @@ def toggle_fullscreen(images, prev_window_size):
     original_image_size = new_image_size  # Update the original image size to the new one
 
     # Recalculate slide positions if partial transition is active
-    if current_page != 0 and (scrolling or slide_transitions[current_page]["transition"] == constant.PARTIAL_SLIDE_TRANSITION):
+    if current_page != 0 and (scrolling or constant.PARTIAL_SLIDE_TRANSITION ==
+                              TransitionsConfig.get_transition_config(slide_transitions, current_page)["transition"]):
         halfway_pos = window_size[1] / 4
         prev_start_pos = ((window_size[1] - images[current_page - 1].get_height()) // 2)
         prev_slide_position = prev_start_pos - halfway_pos
@@ -380,7 +381,7 @@ def handle_keyup(event):
 
 # Function to handle mouse events
 def handle_mouse(event, images, window_size, slide_transitions):
-    global current_page, focused_page, show_overview, spotlight_position, end_of_presentation
+    global current_page, focused_page, show_overview, spotlight_position, end_of_presentation, black_screen_mode
     global highlight_start, highlight_rects, current_highlights, zoom_pos, zoom_level
     global is_drawing_box, annotation_start, annotation_rect, is_entering_text, dragging, current_text
     global is_drawing_pen, pen_points
@@ -390,6 +391,8 @@ def handle_mouse(event, images, window_size, slide_transitions):
 
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:  # Left mouse button
+            if black_screen_mode:
+                black_screen_mode = not black_screen_mode
             if is_entering_text:
                 return  # Ignore clicks while entering text
             if show_overview:
@@ -419,6 +422,28 @@ def handle_mouse(event, images, window_size, slide_transitions):
                         end_of_presentation = True
                     else:
                         apply_transition(prev_page, current_page, images, slide_transitions, reverse=False)
+        elif event.button == 3 and not show_overview:  # Right mouse button and not in overview mode
+            # Go to the previous slide
+            if black_screen_mode:
+                black_screen_mode = not black_screen_mode
+            if end_of_presentation:
+                current_page = len(images) - 1
+                prev_page = current_page
+                end_of_presentation = False
+            else:
+                prev_page = current_page
+                current_page = (current_page - 1)
+                if current_page < 0:
+                    current_page = 0
+            zoom_level = 1.0  # Reset zoom level on slide change
+            current_highlights.clear()
+            transition_config_current = TransitionsConfig.get_transition_config(slide_transitions, current_page)
+            reversal_strategy = transition_config_current["reversal-strategy"]
+            if reversal_strategy != constant.NONE:
+                apply_transition(prev_page, current_page, images, slide_transitions,
+                                 TransitionsConfig.check_reversal_strategy(reversal_strategy))
+            else:
+                display_slide(images, current_page, window_size)
         elif event.button == 4:  # Scroll up (mouse wheel up)
             if pygame.key.get_mods() & pygame.KMOD_CTRL:  # Check if Ctrl key is pressed
                 is_drawing_pen = False
@@ -627,7 +652,7 @@ def display_help():
         "Ctrl + Mouse Wheel: Zoom in/out",
         "T: Add text annotation",
         "P: Toggle pen mode for freehand drawing",
-        "RETURN: Stop entering text",
+        "RETURN: Stop entering text in text annotation box",
         "Ctrl + S: Save annotations"
     ]
     y_offset = 50
