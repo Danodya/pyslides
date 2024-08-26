@@ -30,15 +30,17 @@ class TransitionsConfig:
                 slide_number = int(key.split()[1])
                 slide_transitions[slide_number] = {
                     "transition": value.get("transition", TransitionsConfig.general_settings["transition"]),
-                    "duration": value.get("transition-duration", TransitionsConfig.general_settings["transition-duration"]),
-                    "reversal-strategy": value.get("reversal-strategy", TransitionsConfig.general_settings["reversal-strategy"])
+                    "duration": value.get("transition-duration", TransitionsConfig.general_settings["transition"
+                                                                                                    "-duration"]),
+                    "reversal-strategy": value.get("reversal-strategy", TransitionsConfig.general_settings["reversal"
+                                                                                                           "-strategy"])
                 }
         return slide_transitions
 
     # Function to get the transition type and duration for a given slide
     @staticmethod
-    def get_transition_config(slide_transitions, slide_number):
-        return slide_transitions.get(slide_number,
+    def get_transition_config(state):
+        return state.slide_transitions.get(state.current_page,
                                      {"transition": TransitionsConfig.general_settings["transition"],
                                       "duration": TransitionsConfig.general_settings["transition-duration"],
                                       "reversal-strategy": TransitionsConfig.general_settings["reversal-strategy"]})

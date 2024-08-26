@@ -1,6 +1,8 @@
 import pygame
 import time
 
+from pyslides import constant
+from pyslides.annotations import draw_text_annotations, draw_pen_annotations
 from pyslides.config.transitions_config_reader import TransitionsConfig
 
 
@@ -30,9 +32,14 @@ class SlideTransition:
             progress = elapsed_time / duration
 
             # Calculate current positions for images based on progress
-            y_pos_next = start_pos - (start_pos - end_pos) * progress if reverse else start_pos + (end_pos - start_pos) * progress
+            y_pos_next = start_pos - (start_pos - end_pos) * progress if reverse else start_pos + (
+                    end_pos - start_pos) * progress
             # y_pos_prev = y_pos_prev + window_size[1] * progress if reverse else y_pos_prev - window_size[1] * progress
-            y_pos_prev = -(window_size[1] - prev_image.get_height()) // 2 + window_size[1] * progress if reverse else (window_size[1] - prev_image.get_height()) // 2 - window_size[1] * progress
+            y_pos_prev = -(window_size[1] - prev_image.get_height()) // 2 + window_size[1] * progress if reverse else (
+                                                                                                                              window_size[
+                                                                                                                                  1] - prev_image.get_height()) // 2 - \
+                                                                                                                      window_size[
+                                                                                                                          1] * progress
 
             # Clear screen and draw images at calculated positions
             screen.fill((0, 0, 0))
@@ -70,7 +77,8 @@ class SlideTransition:
             progress = elapsed_time / duration
 
             # Calculate current position and alpha based on progress
-            y_pos_next = start_pos - (start_pos - end_pos) * progress if reverse else start_pos + (end_pos - start_pos) * progress
+            y_pos_next = start_pos - (start_pos - end_pos) * progress if reverse else start_pos + (
+                    end_pos - start_pos) * progress
             # alpha = 255 * progress if reverse else 255 - (255 * progress)
             alpha = 255 - (255 * progress)
 
@@ -78,7 +86,8 @@ class SlideTransition:
             screen.fill((0, 0, 0))
             if alpha > 0:
                 prev_image.set_alpha(int(alpha))
-                screen.blit(prev_image, ((window_size[0] - prev_image.get_width()) // 2, (window_size[1] - prev_image.get_height()) // 2))
+                screen.blit(prev_image, (
+                    (window_size[0] - prev_image.get_width()) // 2, (window_size[1] - prev_image.get_height()) // 2))
             screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, y_pos_next))
             pygame.display.flip()
 
@@ -109,8 +118,11 @@ class SlideTransition:
             progress = elapsed_time / duration
 
             # Calculate current positions for images based on progress
-            x_pos_next = start_pos - (start_pos - end_pos) * progress if reverse else start_pos + (end_pos - start_pos) * progress
-            x_pos_prev = end_pos - window_size[0] * progress if reverse else (window_size[0] - prev_image.get_width()) // 2 + window_size[0] * progress
+            x_pos_next = start_pos - (start_pos - end_pos) * progress if reverse else start_pos + (
+                    end_pos - start_pos) * progress
+            x_pos_prev = end_pos - window_size[0] * progress if reverse else (window_size[
+                                                                                  0] - prev_image.get_width()) // 2 + \
+                                                                             window_size[0] * progress
 
             # Clear screen and draw images at calculated positions
             screen.fill((0, 0, 0))
@@ -144,8 +156,11 @@ class SlideTransition:
             progress = elapsed_time / duration
 
             # Calculate current positions for images based on progress
-            x_pos_next = start_pos + (end_pos - start_pos) * progress if reverse else start_pos - (start_pos - end_pos) * progress
-            x_pos_prev = end_pos + window_size[0] * progress if reverse else (window_size[0] - prev_image.get_width()) // 2 - window_size[0] * progress
+            x_pos_next = start_pos + (end_pos - start_pos) * progress if reverse else start_pos - (
+                    start_pos - end_pos) * progress
+            x_pos_prev = end_pos + window_size[0] * progress if reverse else (window_size[
+                                                                                  0] - prev_image.get_width()) // 2 - \
+                                                                             window_size[0] * progress
 
             # Clear screen and draw images at calculated positions
             screen.fill((0, 0, 0))
@@ -182,8 +197,10 @@ class SlideTransition:
             screen.fill((0, 0, 0))
             prev_image.set_alpha(int(255 - alpha) if not reverse else int(alpha))
             next_image.set_alpha(int(alpha) if not reverse else int(255 - alpha))
-            screen.blit(prev_image, ((window_size[0] - prev_image.get_width()) // 2, (window_size[1] - prev_image.get_height()) // 2))
-            screen.blit(next_image, ((window_size[0] - next_image.get_width()) // 2, (window_size[1] - next_image.get_height()) // 2))
+            screen.blit(prev_image, (
+                (window_size[0] - prev_image.get_width()) // 2, (window_size[1] - prev_image.get_height()) // 2))
+            screen.blit(next_image, (
+                (window_size[0] - next_image.get_width()) // 2, (window_size[1] - next_image.get_height()) // 2))
             pygame.display.flip()
 
             # Delay to control frame rate
@@ -192,8 +209,12 @@ class SlideTransition:
     @staticmethod
     def partial_sliding(prev_image, next_image, window_size, screen, duration=1, reverse=False):
         if reverse:
-            SlideTransition.choose_transition(prev_image, next_image, window_size, screen, TransitionsConfig.general_settings["transition"],
-                              float(TransitionsConfig.general_settings["transition-duration"].replace('s', '')), reverse=False)
+            SlideTransition.choose_transition(prev_image, next_image, window_size, screen,
+                                              TransitionsConfig.general_settings["transition"],
+                                              float(
+                                                  TransitionsConfig.general_settings["transition-duration"].replace('s',
+                                                                                                                    '')),
+                                              reverse=False)
             # SlideTransition.fade_in(prev_image, next_image, window_size, screen, duration)
         else:
             # Record the start and end time for the transition
@@ -244,3 +265,65 @@ class SlideTransition:
             SlideTransition.partial_sliding(prev_image, next_image, window_size, screen, duration, reverse=reverse)
         elif transition_type == 'fade_in':
             SlideTransition.fade_in(prev_image, next_image, window_size, screen, duration, reverse)
+
+    @staticmethod
+    def apply_transition(prev_page, images, state, reverse=False):
+        """
+        Applies a transition effect between slides, based on the transition configuration.
+        """
+
+        transition_config = TransitionsConfig.get_transition_config(state)
+        transition_type = transition_config["transition"]  # Get the transition type
+        duration = float(transition_config["duration"].replace('s', ''))  # Get the transition duration
+        SlideTransition.choose_transition(images[prev_page], images[state.current_page], state.window_size,
+                                          state.screen, transition_type,
+                                          duration, reverse)  # Apply the transition
+        if transition_type == constant.PARTIAL_SLIDE_TRANSITION:
+            # Calculate positions for partial slide transitions
+            halfway_pos = state.window_size[1] / 4
+            prev_start_pos = ((state.window_size[1] - images[prev_page].get_height()) // 2)
+            state.prev_slide_position = prev_start_pos - halfway_pos
+            state.next_slide_position = state.prev_slide_position + images[prev_page].get_height()
+        return state.next_slide_position
+
+
+def scroll_slide(images, direction, state):
+    """
+    Scrolls slides up or down for partial slide transitions.
+    """
+    # global current_page, window_size, screen, prev_slide_position, next_slide_position
+    scroll_step = 10  # Pixels to move per scroll step
+    image = images[state.current_page - 1]  # Get the previous slide image
+    next_image = images[state.current_page]  # Get the current slide image
+    end_pos = (state.window_size[1] - next_image.get_height()) // 2  # End scrolling when the main slide is centered
+    if (state.prev_slide_position + image.get_height() > end_pos) if direction > 0 else (
+            state.prev_slide_position < end_pos):
+        prev_start_pos = state.prev_slide_position
+        next_start_pos = prev_start_pos + image.get_height()
+
+        y_pos_prev = prev_start_pos - scroll_step * direction  # Update the Y position of the previous slide
+        y_pos_next = next_start_pos - scroll_step * direction  # Update the Y position of the next slide
+
+        state.screen.fill((0, 0, 0))  # Clear the screen with black
+        state.screen.blit(image,
+                          ((state.window_size[0] - image.get_width()) // 2, y_pos_prev))  # Draw the previous slide
+        state.screen.blit(next_image,
+                          ((state.window_size[0] - next_image.get_width()) // 2, y_pos_next))  # Draw the current slide
+
+        state.prev_slide_position = y_pos_prev  # Update the previous slide position
+        state.next_slide_position = y_pos_next  # Update the next slide position
+
+
+def draw_partial_slide(images, state):
+    """
+    Draws the slides after partial sliding and after each scrolling action.
+    """
+    # global window_size, prev_slide_position, next_slide_position
+    image = images[state.current_page - 1]  # Get the previous slide image
+    next_image = images[state.current_page]  # Get the current slide image
+
+    state.screen.fill((0, 0, 0))  # Clear the screen with black
+    state.screen.blit(image, (
+        (state.window_size[0] - image.get_width()) // 2, state.prev_slide_position))  # Draw the previous slide
+    state.screen.blit(next_image, (
+        (state.window_size[0] - next_image.get_width()) // 2, state.next_slide_position))  # Draw the current slide
