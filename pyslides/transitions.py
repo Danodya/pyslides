@@ -275,6 +275,10 @@ class SlideTransition:
         Choose and apply the appropriate transition method based on the transition type.
         """
 
+        # Reset alpha values to full opacity before starting any transition
+        prev_image.set_alpha(255)
+        next_image.set_alpha(255)
+
         # Call the appropriate transition method based on the transition type
         if transition_type == 'pull':
             SlideTransition.pull(prev_image, next_image, window_size, screen, duration, reverse)
@@ -294,6 +298,10 @@ class SlideTransition:
         """
         Applies a transition effect between slides, based on the transition configuration.
         """
+
+        # Reset alpha values before applying the transition
+        images[prev_page].set_alpha(255)
+        images[state.current_page].set_alpha(255)
 
         transition_config = TransitionsConfig.get_transition_config(state)
         transition_type = transition_config["transition"]  # Get the transition type
