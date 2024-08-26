@@ -196,7 +196,6 @@ def handle_mouse(event, images, state):
 
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:  # Left mouse button
-            print("Mouse button down detected!")
             if state.black_screen_mode:
                 state.black_screen_mode = not state.black_screen_mode
             if state.is_entering_text:

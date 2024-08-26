@@ -8,10 +8,8 @@ class AppState:
         # Define the initial window size
         self.original_window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HEIGHT)
         self.window_size = self.original_window_size
-        print("window_size", self.window_size)
         self.fullscreen_window_size = self.original_window_size  # initialized to original window size
         self.screen = pygame.display.set_mode(self.window_size)
-        print("screen", self.screen)
         pygame.display.set_caption(constant.DISPLAY_CAPTION)
 
         # Initialize Pygame's font module for text rendering
