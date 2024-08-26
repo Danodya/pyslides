@@ -2,12 +2,11 @@ import pygame
 import time
 
 from pyslides import constant
-from pyslides.annotations import draw_text_annotations, draw_pen_annotations
 from pyslides.config.transitions_config_reader import TransitionsConfig
 
 
 class SlideTransition:
-    preset_alpha = 250  # Default opacity value for images
+    preset_alpha = 255  # Default opacity value for images
 
     @staticmethod
     def pull(prev_image, next_image, window_size, screen, duration=1, reverse=False):
@@ -26,9 +25,9 @@ class SlideTransition:
         # Define the starting position for the previous image (centered)
         y_pos_prev = (window_size[1] - prev_image.get_height()) // 2
 
-        # Set full opacity for both images
-        prev_image.set_alpha(SlideTransition.preset_alpha)
-        next_image.set_alpha(SlideTransition.preset_alpha)
+        # # Set full opacity for both images
+        # prev_image.set_alpha(SlideTransition.preset_alpha)
+        # next_image.set_alpha(SlideTransition.preset_alpha)
 
         # Perform the pull transition
         while time.time() < end_time:
@@ -71,9 +70,9 @@ class SlideTransition:
         y_pos_next = start_pos  # Start above the screen for the next image
         alpha = 255  # Start with full opacity for the previous image
 
-        # Set full opacity for both images
-        prev_image.set_alpha(SlideTransition.preset_alpha)
-        next_image.set_alpha(SlideTransition.preset_alpha)
+        # # Set full opacity for both images
+        # prev_image.set_alpha(SlideTransition.preset_alpha)
+        # next_image.set_alpha(SlideTransition.preset_alpha)
 
         # Perform the fade out and slide in transition
         while time.time() < end_time:
@@ -116,9 +115,9 @@ class SlideTransition:
         # Define the starting position for the previous image (centered)
         x_pos_prev = (window_size[0] - prev_image.get_width()) // 2
 
-        # Set full opacity for both images
-        prev_image.set_alpha(SlideTransition.preset_alpha)
-        next_image.set_alpha(SlideTransition.preset_alpha)
+        # # Set full opacity for both images
+        # prev_image.set_alpha(SlideTransition.preset_alpha)
+        # next_image.set_alpha(SlideTransition.preset_alpha)
 
         # Perform the swipe right transition
         while time.time() < end_time:
@@ -159,9 +158,9 @@ class SlideTransition:
         # Define the starting position for the previous image (centered)
         x_pos_prev = (window_size[0] - prev_image.get_width()) // 2
 
-        # Set full opacity for both images
-        prev_image.set_alpha(SlideTransition.preset_alpha)
-        next_image.set_alpha(SlideTransition.preset_alpha)
+        # # Set full opacity for both images
+        # prev_image.set_alpha(SlideTransition.preset_alpha)
+        # next_image.set_alpha(SlideTransition.preset_alpha)
 
         # Perform the swipe left transition
         while time.time() < end_time:
@@ -199,9 +198,9 @@ class SlideTransition:
         end_alpha = 0 if reverse else 255  # Ending alpha for the next image
         alpha_step = end_alpha / (duration * 100)  # Calculate alpha increment per frame
 
-        # Set full opacity for the previous image and starting alpha for the next image
-        prev_image.set_alpha(SlideTransition.preset_alpha)
-        next_image.set_alpha(start_alpha)
+        # # Set full opacity for the previous image and starting alpha for the next image
+        # prev_image.set_alpha(SlideTransition.preset_alpha)
+        # next_image.set_alpha(start_alpha)
 
         # Perform the fade in transition
         while time.time() < end_time:
@@ -248,9 +247,9 @@ class SlideTransition:
             # Distance the next slide needs to move
             distance_to_move = next_start_pos - (prev_start_pos + prev_image.get_height())
 
-            # Set full opacity for both images
-            prev_image.set_alpha(SlideTransition.preset_alpha)
-            next_image.set_alpha(SlideTransition.preset_alpha)
+            # # Set full opacity for both images
+            # prev_image.set_alpha(SlideTransition.preset_alpha)
+            # next_image.set_alpha(SlideTransition.preset_alpha)
 
             # Perform the partial sliding transition
             while time.time() < end_time:
@@ -276,8 +275,8 @@ class SlideTransition:
         """
 
         # Reset alpha values to full opacity before starting any transition
-        prev_image.set_alpha(255)
-        next_image.set_alpha(255)
+        prev_image.set_alpha(SlideTransition.preset_alpha)
+        next_image.set_alpha(SlideTransition.preset_alpha)
 
         # Call the appropriate transition method based on the transition type
         if transition_type == 'pull':
@@ -300,8 +299,8 @@ class SlideTransition:
         """
 
         # Reset alpha values before applying the transition
-        images[prev_page].set_alpha(255)
-        images[state.current_page].set_alpha(255)
+        images[prev_page].set_alpha(SlideTransition.preset_alpha)
+        images[state.current_page].set_alpha(SlideTransition.preset_alpha)
 
         transition_config = TransitionsConfig.get_transition_config(state)
         transition_type = transition_config["transition"]  # Get the transition type

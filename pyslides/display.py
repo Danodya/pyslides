@@ -65,6 +65,7 @@ def display_overview(images, state):
     for i, thumbnail in enumerate([pygame.transform.scale(img, (thumb_width, thumb_height)) for img in images]):
         x = margin + (i % cols) * (thumb_width + margin)
         y = margin + (i // cols) * (thumb_height + margin)
+        images[i].set_alpha(255)  # Just a quick fix for fade out slide in transition issue
         if i != highlighted_page:
             thumbnail.set_alpha(100)  # Fade out non-highlighted thumbnails
         state.screen.blit(thumbnail, (x, y))  # Display the thumbnail on the screen
@@ -103,7 +104,7 @@ def highlight_thumbnail(mouse_pos, images, state):
     for i in range(len(images)):
         x = margin + (i % cols) * (thumb_width + margin)
         y = margin + (i // cols) * (thumb_height + margin)
-        images[i].set_alpha(250)  # Just a quick fix for fade out slide in transition issue
+        images[i].set_alpha(255)  # Just a quick fix for fade out slide in transition issue
         if x <= mouse_pos[0] <= x + thumb_width and y <= mouse_pos[1] <= y + thumb_height:
             state.focused_page = i  # Update the focused page
             break
