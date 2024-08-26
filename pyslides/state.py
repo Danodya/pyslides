@@ -6,7 +6,7 @@ from pyslides import constant
 class AppState:
     def __init__(self):
         # Define the initial window size
-        self.original_window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HIGHT)
+        self.original_window_size = (constant.SCREEN_WIDTH, constant.SCREEN_HEIGHT)
         self.window_size = self.original_window_size
         print("window_size", self.window_size)
         self.fullscreen_window_size = self.original_window_size  # initialized to original window size
@@ -35,7 +35,7 @@ class AppState:
         self.highlight_rects = {}  # Store highlight rectangles per slide
         self.current_highlights = []  # Current highlights being drawn
         self.spotlight_radius = 100  # Initial spotlight radius
-        self.spotlight_position = (constant.SCREEN_WIDTH // 2, constant.SCREEN_HIGHT // 2)  # Initial spotlight position
+        self.spotlight_position = (constant.SCREEN_WIDTH // 2, constant.SCREEN_HEIGHT // 2)  # Initial spotlight position
         self.end_of_presentation = False  # Flag to indicate the end of the presentation
         self.show_help = False  # Flag to indicate if help screen is active
         self.show_initial_help_popup = True  # Flag to show the initial help popup

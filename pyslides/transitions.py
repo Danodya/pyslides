@@ -11,6 +11,10 @@ class SlideTransition:
 
     @staticmethod
     def pull(prev_image, next_image, window_size, screen, duration=1, reverse=False):
+        """
+         Perform a vertical pull transition between two slides.
+        """
+
         # Record the start and end time for the transition
         start_time = time.time()
         end_time = start_time + duration
@@ -35,11 +39,8 @@ class SlideTransition:
             y_pos_next = start_pos - (start_pos - end_pos) * progress if reverse else start_pos + (
                     end_pos - start_pos) * progress
             # y_pos_prev = y_pos_prev + window_size[1] * progress if reverse else y_pos_prev - window_size[1] * progress
-            y_pos_prev = -(window_size[1] - prev_image.get_height()) // 2 + window_size[1] * progress if reverse else (
-                                                                                                                              window_size[
-                                                                                                                                  1] - prev_image.get_height()) // 2 - \
-                                                                                                                      window_size[
-                                                                                                                          1] * progress
+            y_pos_prev = -(window_size[1] - prev_image.get_height()) // 2 + window_size[1] * progress if reverse else \
+                (window_size[1] - prev_image.get_height()) // 2 - window_size[1] * progress
 
             # Clear screen and draw images at calculated positions
             screen.fill((0, 0, 0))
@@ -53,6 +54,10 @@ class SlideTransition:
 
     @staticmethod
     def fade_out_slide_in(prev_image, next_image, window_size, screen, duration=1, reverse=False):
+        """
+        Perform a fade-out and slide-in transition between two slides.
+        """
+
         # Record the start and end time for the transition
         start_time = time.time()
         end_time = start_time + duration
@@ -96,6 +101,10 @@ class SlideTransition:
 
     @staticmethod
     def swipe_right(prev_image, next_image, window_size, screen, duration=1, reverse=False):
+        """
+        Perform a swipe-right transition between two slides.
+        """
+
         # Record the start and end time for the transition
         start_time = time.time()
         end_time = start_time + duration
@@ -135,6 +144,10 @@ class SlideTransition:
 
     @staticmethod
     def swipe_left(prev_image, next_image, window_size, screen, duration=1, reverse=False):
+        """
+        Perform a swipe-left transition between two slides.
+        """
+
         # Record the start and end time for the transition
         start_time = time.time()
         end_time = start_time + duration
@@ -173,6 +186,10 @@ class SlideTransition:
 
     @staticmethod
     def fade_in(prev_image, next_image, window_size, screen, duration=1, reverse=False):
+        """
+        Perform a fade-in transition between two slides.
+        """
+
         # Record the start and end time for the transition
         start_time = time.time()
         end_time = start_time + duration
@@ -208,13 +225,15 @@ class SlideTransition:
 
     @staticmethod
     def partial_sliding(prev_image, next_image, window_size, screen, duration=1, reverse=False):
+        """
+        Perform a partial sliding transition where the next slide slides in partially from the bottom.
+        """
         if reverse:
             SlideTransition.choose_transition(prev_image, next_image, window_size, screen,
                                               TransitionsConfig.general_settings["transition"],
                                               float(
-                                                  TransitionsConfig.general_settings["transition-duration"].replace('s',
-                                                                                                                    '')),
-                                              reverse=False)
+                                                  TransitionsConfig.general_settings["transition-duration"]
+                                                      .replace('s', '')), reverse=False)
             # SlideTransition.fade_in(prev_image, next_image, window_size, screen, duration)
         else:
             # Record the start and end time for the transition
@@ -252,6 +271,10 @@ class SlideTransition:
 
     @staticmethod
     def choose_transition(prev_image, next_image, window_size, screen, transition_type, duration, reverse=False):
+        """
+        Choose and apply the appropriate transition method based on the transition type.
+        """
+
         # Call the appropriate transition method based on the transition type
         if transition_type == 'pull':
             SlideTransition.pull(prev_image, next_image, window_size, screen, duration, reverse)

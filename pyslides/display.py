@@ -74,7 +74,6 @@ def select_thumbnail(mouse_pos, images, state):
     """
     Selects a thumbnail in overview mode based on the mouse click position.
     """
-    # global current_page, focused_page, show_overview
     margin = 10
     rows = cols = int(len(images) ** 0.5) + 1  # Calculate the number of rows and columns
     thumb_width = (state.window_size[0] - margin * (cols + 1)) // cols  # Calculate the thumbnail width
@@ -95,7 +94,6 @@ def highlight_thumbnail(mouse_pos, images, state):
     """
     Highlights a thumbnail in overview mode based on the mouse hover position.
     """
-    # global focused_page
     margin = 10
     rows = cols = int(len(images) ** 0.5) + 1  # Calculate the number of rows and columns
     thumb_width = (state.window_size[0] - margin * (cols + 1)) // cols  # Calculate the thumbnail width

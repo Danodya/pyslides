@@ -35,7 +35,6 @@ def adjust_annotation_rect(state):
     """
     Adjusts the size of the annotation rectangle dynamically as text is entered.
     """
-    # global annotation_rect
     if not state.annotation_rect:
         return
     words = state.current_text.split(' ')  # Split the text into words

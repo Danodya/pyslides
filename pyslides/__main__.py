@@ -12,6 +12,7 @@ import time
 # Ensure the pyslides directory is in the Python path
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyslides'))
 
+
 def main():
     """
     Main function that initializes the PDF viewer, handles user input, and manages the presentation loop.
@@ -60,6 +61,12 @@ def main():
 
     # Initialize Pygame
     pygame.init()
+    # Restrict which event types should be placed on the event queue
+    pygame.event.set_blocked(None)
+    pygame.event.set_allowed(
+        [pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT])
+
+    pygame.event.clear()  # Clear the events queue
 
     # Convert PDF to images and load them
     # global image_paths
@@ -76,13 +83,6 @@ def main():
     running = True
     last_scroll_time = 0  # Track the last time we scrolled
     initial_popup_start_time = time.time()  # Track the start time of the initial popup
-
-    # Restrict which event types should be placed on the event queue
-    pygame.event.set_blocked(None)
-    pygame.event.set_allowed(
-        [pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT])
-
-    pygame.event.clear()  # Clear the events queue
 
     while running:
         current_time = time.time()  # Get the current time

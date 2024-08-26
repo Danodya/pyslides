@@ -14,7 +14,6 @@ class AnnotationsConfig:
         """
         Rescales text and pen annotations when the window size or fullscreen mode changes.
         """
-        # global text_annotations, pen_annotations
         # Create deep copies of the annotations to avoid modifying the originals
         rescaled_text_annotations, rescaled_pen_annotations = copy.deepcopy(text_annotations), copy.deepcopy(
             pen_annotations)
@@ -73,7 +72,6 @@ class AnnotationsConfig:
         """
         Saves text and pen annotations to a JSON file.
         """
-        # global fullscreen_window_size, is_fullscreen
         rescaled_text_annotations, rescaled_pen_annotations = copy.deepcopy(state.text_annotations), copy.deepcopy(
             state.pen_annotations)
         if state.is_fullscreen:
@@ -107,7 +105,6 @@ class AnnotationsConfig:
         """
         Loads text and pen annotations from a JSON file.
         """
-        # global text_annotations, pen_annotations
         text_annotations, pen_annotations = {}, {}
         annotations_file = f"{Path(pdf_file).stem}_annotations.json"
 
