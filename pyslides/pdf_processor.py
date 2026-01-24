@@ -9,7 +9,7 @@ def convert_pdf_to_images(pdf_path, output_folder, window_size):
     """
     pdf_document = fitz.open(pdf_path)  # Open the PDF file
     screen_width, screen_height = window_size
-    high_res_factor = 2.0  # Scale factor for higher resolution images
+    high_res_factor = 5.0  # Scale factor for higher resolution images
     images = []
 
     total_pages = len(pdf_document)  # Get the total number of pages in the PDF
@@ -38,4 +38,4 @@ def scale_image_to_fit(image, window_size):
     # Calculate the scale factor to fit the image within the window size
     scale_factor = min(window_size[0] / image.get_width(), window_size[1] / image.get_height())
     new_size = (int(image.get_width() * scale_factor), int(image.get_height() * scale_factor))
-    return pygame.transform.scale(image, new_size)  # Return the scaled image
+    return pygame.transform.smoothscale(image, new_size)  # Return the scaled image

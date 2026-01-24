@@ -20,7 +20,16 @@ def toggle_fullscreen(images, prev_window_size, state):
         state.fullscreen_window_size = state.screen.get_size()  # Update fullscreen window size
     else:
         # Set the screen back to windowed mode
-        state.screen = pygame.display.set_mode(state.original_window_size)
+        state.screen = pygame.display.set_mode(state.original_window_size, pygame.RESIZABLE)
+        
+        # macOS requires an explicit resize after fullscreen exit
+        pygame.display.update()
+
+        # Force resize to correct size
+        pygame.display.set_mode(
+            state.original_window_size,
+            pygame.RESIZABLE
+        )
 
     new_window_size = state.screen.get_size()  # Get the new window size
 
